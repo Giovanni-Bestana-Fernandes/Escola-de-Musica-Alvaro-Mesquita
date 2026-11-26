@@ -13,7 +13,8 @@
     "test:rls": "node --env-file=.env.local scripts/test-rls.mjs",
     "test:pages": "node --env-file=.env.local scripts/smoke-pages.mjs",
     "shots": "node --env-file=.env.local scripts/shots.mjs",
-    "images": "node scripts/fetch-instruments.mjs"
+    "images": "node scripts/fetch-instruments.mjs",
+    "test:layout": "node scripts/check-layout.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.17",

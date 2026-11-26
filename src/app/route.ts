@@ -14,6 +14,7 @@
  * moments: pinned-chapters (#aulas), picture-develops (#festivais)
  */
 import { createClient } from "@supabase/supabase-js";
+import { ADDRESS_DEFAULT, mapsEmbed, mapsLink, parseAddress } from "@/lib/address";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ interface Settings {
   school_name: string;
   tagline: string | null;
   address: string | null;
+  maps_embed_url: string | null;
   whatsapp: string | null;
   instagram: string | null;
   email: string | null;
@@ -72,18 +74,6 @@ function md(src: string) {
 
 const listPt = (a: string[]) => (a.length < 2 ? a.join("") : `${a.slice(0, -1).join(", ")} e ${a[a.length - 1]}`);
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-
-/** Rua e bairro, sem número nem CEP. */
-function street(address: string | null) {
-  if (!address) return null;
-  return address
-    .replace(/\(.*?\)/g, "")
-    .replace(/,?\s*\d{5}-?\d{3}/g, "")
-    .replace(/,\s*\d+[a-zA-Z]?\b/g, "")
-    .replace(/\s+-\s+/g, ", ")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
 
 const ARROW =
   '<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg>';
@@ -169,8 +159,9 @@ export async function GET() {
   const sobre = sec("sobre");
   const sede = sec("nova-sede");
   const festivais = sec("festivais");
-  const addr = street(settings?.address ?? null);
-  const mapUrl = addr ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(addr)}` : null;
+  // sem o Supabase (ou sem endereço salvo) o site mostra o endereço da sede
+  const place = parseAddress(settings ? settings.address : ADDRESS_DEFAULT);
+  const mapUrl = place ? mapsLink(place) : null;
   // "Quero me matricular" abre a tela do vídeo (/matricula), que depois leva ao WhatsApp
   const wa = "/matricula";
   const waAttrs = "";
@@ -324,7 +315,7 @@ export async function GET() {
     </div>
     <div class="wrap hero__wrap">
       <div class="hero__text">
-        ${addr ? `<p class="hero__kicker"><span class="dot" aria-hidden="true"></span>Nova sede: ${esc(addr)}</p>` : ""}
+        ${place ? `<p class="hero__kicker"><span class="dot" aria-hidden="true"></span>Nova sede: ${esc(place.street)}${place.city ? `, ${esc(place.city)}` : ""}</p>` : ""}
         <h1 id="hero-h">${h1}</h1>
         <p class="hero__lead">${esc(cap(listPt(insNames)))}, do iniciante ao avançado. Cada aula é pensada pra sua evolução, com atenção individual e foco no que você quer tocar.</p>
         <div class="btn-row"><a class="btn btn--primary" href="${esc(wa)}"${waAttrs}>${MAIN}${ARROW}</a><a class="btn btn--secondary" href="#cursos">Ver os cursos</a></div>
@@ -405,15 +396,22 @@ export async function GET() {
       <div class="section-head"><h2 id="sede-h">${esc(sede?.title || "A nova sede")}</h2></div>
       <div class="grid grid--top">
         <div class="span-6">
-          ${addr ? `<p class="type-moment"><a href="${esc(mapUrl!)}" target="_blank" rel="noopener">${esc(addr)}</a></p>` : ""}
+          ${place ? `<p class="type-moment"><a href="${esc(mapUrl!)}" target="_blank" rel="noopener">${esc(place.street)}</a></p>
+          <address class="sede__addr">${esc(place.full)}</address>` : ""}
           <div class="prose">${sede ? md(sede.body) : ""}
-          ${mapUrl ? `<p><a class="link" href="${esc(mapUrl)}" target="_blank" rel="noopener">Ver o caminho no mapa</a></p>` : ""}</div>
+          ${mapUrl ? `<p><a class="link" href="${esc(mapUrl)}" target="_blank" rel="noopener">Abrir no Google Maps</a></p>` : ""}</div>
           <div class="ensaio">
-            <h3>Prática de banda e sala de ensaio</h3>
-            <p>Se você já toca, a sede tem sala de ensaio equipada pra sua banda dar o próximo passo.</p>
+            <figure class="ensaio__photo tilt">${img(PHOTO.sala, { cls: "", sizes: "160px" })}</figure>
+            <div>
+              <h3>Prática de banda e sala de ensaio</h3>
+              <p>Se você já toca, a sede tem sala de ensaio equipada pra sua banda dar o próximo passo.</p>
+            </div>
           </div>
         </div>
-        <div class="taped span-6 start-7"><figure class="split-photo tilt">${img(PHOTO.sala, { cls: "" })}</figure><span class="tape tape--b" aria-hidden="true">Ensaio</span></div>
+        ${place ? `<div class="taped map span-6 start-7">
+          <iframe class="map__frame" src="${esc(mapsEmbed(place, settings?.maps_embed_url))}" title="Mapa com a localização da sede: ${esc(place.full)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+          <span class="tape tape--b" aria-hidden="true">Estamos aqui</span>
+        </div>` : `<div class="taped span-6 start-7"><figure class="split-photo tilt">${img(PHOTO.sala, { cls: "" })}</figure><span class="tape tape--b" aria-hidden="true">Ensaio</span></div>`}
       </div>
     </div>
   </section>
@@ -432,7 +430,8 @@ export async function GET() {
       <div class="grid">
         <div class="span-6 stack-4">
           <a class="nav__logo" href="#top">${MARK}<span>${esc(name)}</span></a>
-          ${addr ? `<address class="footer__address">${esc(addr)}</address>` : ""}
+          ${place ? `<address class="footer__address"><a href="${esc(mapUrl!)}" target="_blank" rel="noopener">${esc(place.street)}</a></address>
+          <p class="footer__full">${esc(place.area)}${/\d{5}-?\d{3}/.test(place.full) ? ` · CEP ${esc(place.full.match(/\d{5}-?\d{3}/)![0])}` : ""}</p>` : ""}
           <p class="footer__lede">${esc(tagline)}</p>
         </div>
         <div class="span-3 start-7 footer__col"><h3>Escola</h3><ul><li><a href="#cursos">Cursos</a></li><li><a href="#aulas">Aulas</a></li><li><a href="#festivais">Festivais</a></li><li><a href="#sede">Sede</a></li></ul></div>
