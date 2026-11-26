@@ -1,0 +1,6 @@
+# não sobe para a Vercel: variáveis locais, capturas e artefatos de build (a Vercel faz o próprio build)
+.env*
+.taste-skill
+.next
+node_modules
+tsconfig.tsbuildinfo

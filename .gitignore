@@ -9,3 +9,6 @@ next-env.d.ts
 supabase/.temp
 supabase/.branches
 .taste-skill/
+
+.vercel
+.env*
