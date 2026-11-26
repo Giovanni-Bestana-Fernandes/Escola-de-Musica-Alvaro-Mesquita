@@ -13,6 +13,7 @@ const API = "https://commons.wikimedia.org/w/api.php";
 /** key → arquivo do Commons. cut: "alpha" (já é PNG recortado) | "white" (fundo branco a remover) | "photo" */
 const ITEMS = [
   { key: "sala", title: "File:A depressive rock band in Iran- Music rehearsal space- Canon Photography-Mortaz band- Photographer mostafa meraji 13.jpg", cut: "photo" },
+  { key: "banda", title: "File:A depressive rock band in Iran- Music rehearsal space- Canon Photography-Mortaz band- Photographer mostafa meraji 08.jpg", cut: "photo" },
   { key: "guitarra", title: "File:Guitar 3.png", cut: "alpha" },
   { key: "violao", title: "File:Spanish classical acoustic guitar3.png", cut: "alpha" },
   { key: "baixo", title: "File:Fender Jaguar Bass front.png", cut: "alpha" },

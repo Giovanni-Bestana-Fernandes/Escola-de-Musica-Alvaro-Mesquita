@@ -43,7 +43,7 @@ for (const [w, h] of SIZES) {
       const CONTENT = "h1, h2, h3, p, li, a.btn, button, .inst__deck, .split-photo, .develop, address, .staff, .rosette-host, .ensaio, .type-moment";
       const blocks = [...document.querySelectorAll("main > section, footer.closing")];
       const name = (el) => el.id || el.className.toString().split(" ")[0];
-      const label = (el) => `${el.tagName.toLowerCase()}${el.className ? "." + el.className.toString().trim().split(/\s+/)[0] : ""} "${(el.textContent || "").replace(/s+/g, " ").trim().slice(0, 40)}"`;
+      const label = (el) => `${el.tagName.toLowerCase()}${el.className ? "." + el.className.toString().trim().split(/\s+/)[0] : ""} "${(el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40)}"`;
       for (const b of blocks) {
         const br = abs(b);
         for (const el of b.querySelectorAll(CONTENT)) {

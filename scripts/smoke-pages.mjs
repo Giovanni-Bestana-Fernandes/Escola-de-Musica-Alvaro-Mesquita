@@ -45,7 +45,7 @@ const diegoConv = convs.find((c) => c.student.email === "diego@demo.com").id;
 const { data: fest } = await service.from("festivals").select("id").limit(1).single();
 
 console.log("\nVisitante");
-await page("", "/", ["hero-h", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Lucas", "curso-teclado", "landing/img/sala-1600.webp", "R. Joaquim Franco Silva, 80", "maps.google.com/maps?q=", "Abrir no Google Maps", "landing/stage.js", "landing/instruments.js", "landing/forms.js"]);
+await page("", "/", ["hero-h", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Projeto de Bandas", "professor <strong>Alvarinho</strong>", "Nossa equipe", "landing/img/equipe.webp", "Alvarinho", "Camila", "Lucas", "Aulas de:", "landing/img/banda-1600.webp", "curso-teclado", "landing/img/sala-1600.webp", "R. Joaquim Franco Silva, 80", "maps.google.com/maps?q=", "Abrir no Google Maps", "landing/stage.js", "landing/instruments.js", "landing/forms.js"]);
 await page("", "/creditos", ["Créditos das fotos", "Wikimedia"]);
 await page("", "/matricula", ["Antes de começar, veja como são as aulas", "Continuar para o WhatsApp", "phone=5514996436839", "DWj6PbAIEbT/embed", "R. Joaquim Franco Silva, 80"]);
 await page("", "/login", ["Entrar"]);

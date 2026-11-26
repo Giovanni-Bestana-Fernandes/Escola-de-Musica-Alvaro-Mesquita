@@ -227,12 +227,12 @@ addEventListener("resize", queue);
   }
 }
 
-// ------------------------------------------------------------------ 4. Professores: o disco de vinil vira o fundo da lista
+// ------------------------------------------------------------------ 4. Equipe: o disco de vinil pendurado na borda da seção
+// Fica na divisa entre o Projeto de Bandas e a equipe, na margem direita, girando com a rolagem; passar o mouse
+// num cartão de professor acelera o disco e a agulha aponta para ele.
 {
   const sec = document.getElementById("professores");
-  const col = sec?.querySelector(".wrap .span-6");
-  if (col) {
-    col.classList.add("has-vinyl");
+  if (sec) {
     const wrap = document.createElement("div");
     wrap.className = "vinyl";
     wrap.setAttribute("aria-hidden", "true");
@@ -246,7 +246,7 @@ addEventListener("resize", queue);
     const needle = svg("g", { class: "vinyl__needle" }, s);
     svg("line", { x1: "92", y1: "-92", x2: "26", y2: "-8" }, needle);
     svg("circle", { cx: "92", cy: "-92", r: "5" }, needle);
-    sec.prepend(wrap); // fica pendurado na borda entre Festivais e Professores
+    sec.prepend(wrap);
     let angle = 0,
       speed = 0,
       raf = 0,
@@ -265,7 +265,7 @@ addEventListener("resize", queue);
     const kick = () => {
       if (!raf && !reduced) raf = requestAnimationFrame(spin);
     };
-    sec.querySelectorAll(".rows li").forEach((row) => {
+    sec.querySelectorAll(".rows li, .equipe__card").forEach((row) => {
       const point = () => {
         hover = true;
         const r = row.getBoundingClientRect(),

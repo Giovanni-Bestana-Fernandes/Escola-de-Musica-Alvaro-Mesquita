@@ -31,6 +31,7 @@ interface Section {
   slug: string;
   title: string;
   body: string;
+  image_url: string | null;
   visible: boolean;
 }
 interface Instrument {
@@ -45,6 +46,7 @@ interface Teacher {
   bio: string | null;
   role: string;
   instruments: string[];
+  nickname: string | null;
 }
 
 // ---------------------------------------------------------------- helpers
@@ -128,6 +130,18 @@ const CUT: Record<string, Cut> = {
   canto: { color: "#7b2fd0", ink: "#ffffff", w: 476, h: 1400, alt: "Microfone condensador de estúdio prateado" },
   teclado: { color: "#f06a14", ink: "#1b1712", w: 500, h: 295, alt: "Teclado de 88 teclas azul-acinzentado visto em diagonal", wide: true },
 };
+/** Ícones de linha de cada instrumento (24px, cor do texto), como nos cartões do cartaz da equipe. */
+const ICON: Record<string, string> = {
+  guitarra: '<path d="M15 3.5l5 5M17.5 6 11.5 12"/><path d="M11.5 12c1.6 1.6 1.1 4.2-1 5.8-2.6 1.9-5.7 1.1-6.8-.5s-1.3-4.1 1.2-5.6c1.2-.8 2.1-1.1 2.6-2.1.6-1.3 2.1-.5 4 2.4Z"/><path d="M6.5 15.5l2 2"/>',
+  violao: '<path d="M14.5 4l5.5 5.5M17.2 6.8 12 12"/><path d="M12 12a3.6 3.6 0 0 1 .4 4.6 4.6 4.6 0 0 1-7.1.8 4.6 4.6 0 0 1 .8-7.1A3.6 3.6 0 0 1 10.6 10.6Z"/><circle cx="8.6" cy="15.4" r="1.4"/>',
+  baixo: '<path d="M17.5 2l4.5 4.5M19.7 4.3 11.6 12.4"/><path d="M11.6 12.4c1.6 1.6 1.2 4.3-.9 5.9-2.6 2-5.9 1.2-7-.4s-1.2-4.4 1.4-6c1.3-.8 2.3-1.3 2.8-2.4.7-1.4 2.2-.6 3.7 2.9Z"/>',
+  ukulele: '<path d="M13 5l4.5 4.5M15.2 7.3 11.2 11.3"/><path d="M11.2 11.3c1.7 1.7 1.3 4.4-.6 5.8-2.2 1.6-4.8 1-5.8-.4s-1.2-3.8.8-5c1-.6 1.6-1 2-1.8.5-1 1.8-.6 3.6 1.4Z"/><circle cx="8" cy="15" r="1"/>',
+  canto: '<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M6 10.5a6 6 0 0 0 12 0M12 16.5v4.5M8.5 21h7"/>',
+  teclado: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M7.3 6v12M12 6v12M16.7 6v12"/><path d="M5.6 6v6M9.4 6v6M14.6 6v6M18.4 6v6" stroke-width="2.6"/>',
+};
+const icon = (slug: string | undefined, cls = "ico") =>
+  `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[slug ?? ""] ?? ICON.guitarra}</svg>`;
+const BANDA_ALT = "Baixista ensaiando com a banda numa sala de ensaio escura, sob luz roxa";
 const CUT_FALLBACK = ["#c8952e", "#0f8b8d", "#c2185b", "#5d4037"];
 const SALA_ALT = "Sala de ensaio escura com bateria, amplificadores e a banda tocando sob luz roxa e âmbar";
 
@@ -143,7 +157,7 @@ export async function GET() {
     const db = createClient(url, key, { auth: { persistSession: false } });
     const [s, sec, ins, t] = await Promise.all([
       db.from("site_settings").select("*").eq("id", 1).maybeSingle<Settings>(),
-      db.from("site_sections").select("slug, title, body, visible").returns<Section[]>(),
+      db.from("site_sections").select("slug, title, body, image_url, visible").returns<Section[]>(),
       db.from("instruments").select("id, name, slug, description").order("sort").returns<Instrument[]>(),
       db.from("public_teachers").select("*").returns<Teacher[]>(),
     ]);
@@ -168,9 +182,16 @@ export async function GET() {
   const MAIN = "Quero me matricular";
   const insNames = instruments.map((i) => i.name.toLowerCase());
   const nIns = instruments.length || 6;
-  const orderedTeachers = [...teachers].sort((a, b) =>
-    a.role === "admin" ? -1 : b.role === "admin" ? 1 : a.full_name.localeCompare(b.full_name),
-  );
+  // a mesma ordem da foto da equipe e do cartaz, da esquerda para a direita (Lucas, Camila e o fundador por
+  // último); professores que não estão na foto entram em ordem alfabética, antes do fundador
+  const PHOTO_ORDER = ["lucas", "camila"];
+  const rank = (t: Teacher) => {
+    if (t.role === "admin") return 1000;
+    const k = PHOTO_ORDER.indexOf(t.full_name.split(" ")[0].toLowerCase());
+    return k < 0 ? 100 : k;
+  };
+  const orderedTeachers = [...teachers].sort((a, b) => rank(a) - rank(b) || a.full_name.localeCompare(b.full_name));
+  const bandas = sec("projeto-bandas");
   const year = new Date().getFullYear();
 
   // ---- cursos: um painel colorido por instrumento (carrossel em acordeão, public/landing/instruments.js)
@@ -208,12 +229,31 @@ export async function GET() {
     .join("");
   const h1 = "Espaço musical Alvaro Mesquita".split(" ").map((w, k) => `<span class="w" style="--i:${k}">${esc(w)}</span>`).join(" ");
 
-  const teacherRows = orderedTeachers
-    .map(
-      (t) =>
-        `<li><span class="rows__name">${esc(t.full_name)}${t.instruments.length ? `<small>${esc(listPt(t.instruments))}</small>` : ""}</span><span class="rows__value">${t.role === "admin" ? "Fundador" : "Professor"}</span></li>`,
-    )
+  // ---- equipe: um cartão por professor, como no cartaz "Conheça a nossa equipe"
+  const slugOf = (name: string) => instruments.find((i) => i.name === name)?.slug;
+  // a foto da equipe (Lucas, Camila e Alvarinho, do cartaz da escola); uma foto enviada no painel, na seção
+  // "sobre", tem prioridade
+  const teamPhoto = sobre?.image_url ?? null;
+  const teamImg = teamPhoto
+    ? `<img src="${esc(teamPhoto)}" alt="A equipe de professores do Espaço Musical Álvaro Mesquita" loading="lazy" decoding="async" data-source="client" data-subject="equipe">`
+    : `<img src="landing/img/equipe.webp" srcset="landing/img/equipe-474.webp 474w, landing/img/equipe.webp 948w" sizes="(max-width: 899px) 100vw, 880px" width="948" height="548" alt="Os professores Lucas, Camila e Alvarinho na sede, em frente às guitarras penduradas na parede" loading="lazy" decoding="async" data-source="client" data-subject="equipe">`;
+  const teamCards = orderedTeachers
+    .map((t, k) => {
+      const nick = t.nickname?.trim() || t.full_name.split(" ")[0];
+      const slugs = t.instruments.map(slugOf);
+      const main = slugs.includes("guitarra") ? "guitarra" : slugs[0];
+      const sub = [nick !== t.full_name ? t.full_name : "", t.role === "admin" ? "Fundador" : ""].filter(Boolean).join(" · ");
+      return `<li class="equipe__card" style="--k:${k}">
+          <span class="equipe__icon">${icon(main)}</span>
+          <h3 class="equipe__name">${esc(nick)}</h3>
+          ${sub ? `<p class="equipe__full">${esc(sub)}</p>` : ""}
+          ${t.instruments.length ? `<p class="equipe__label">Aulas de:</p>
+          <ul class="equipe__list">${t.instruments.map((n) => `<li>${icon(slugOf(n))}<span>${esc(n)}</span></li>`).join("")}</ul>` : ""}
+          ${t.bio ? `<p class="equipe__bio">${esc(t.bio)}</p>` : ""}
+        </li>`;
+    })
     .join("");
+  const ARC = `<svg class="equipe__arc" viewBox="0 0 1000 120" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="arcg" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#9a7020" stop-opacity="0"/><stop offset=".25" stop-color="#ecc566"/><stop offset=".5" stop-color="#fbecbf"/><stop offset=".75" stop-color="#c08f2a"/><stop offset="1" stop-color="#9a7020" stop-opacity="0"/></linearGradient></defs><path d="M0 120 Q500 -30 1000 120 Z" fill="var(--p-inv-bg)"/><path d="M0 120 Q500 -30 1000 120" fill="none" stroke="url(#arcg)" stroke-width="3" vector-effect="non-scaling-stroke"/></svg>`;
 
   const html = `<!doctype html>
 <html lang="pt-BR" data-type="service" data-radius="soft" data-buttons="arrow" data-motion>
@@ -294,6 +334,8 @@ export async function GET() {
       <div class="nav__item"><a class="nav__link" href="#cursos">Cursos</a></div>
       <div class="nav__item"><a class="nav__link" href="#aulas">Aulas</a></div>
       <div class="nav__item"><a class="nav__link" href="#festivais">Festivais</a></div>
+      <div class="nav__item"><a class="nav__link" href="#bandas">Bandas</a></div>
+      <div class="nav__item"><a class="nav__link" href="#professores">Equipe</a></div>
       <div class="nav__item"><a class="nav__link" href="#sede">Sede</a></div>
     </nav>
     <div class="nav__actions">
@@ -378,20 +420,42 @@ export async function GET() {
     </div>
   </section>
 
-  <section class="section torn" id="professores" aria-labelledby="professores-h">
+  <section class="section torn bandas" id="bandas" aria-labelledby="bandas-h">
     <div class="wrap grid grid--top">
       <div class="span-6">
         <div class="section-head">
-          <h2 id="professores-h">Professores da escola</h2>
-          ${sobre ? `<div class="prose">${md(sobre.body)}</div>` : ""}
+          <p class="bandas__kicker">Projeto</p>
+          <h2 id="bandas-h">${esc(bandas?.title || "Projeto de Bandas")}</h2>
         </div>
-        ${teacherRows ? `<ul class="rows">${teacherRows}</ul>` : ""}
+        <div class="prose">${md(bandas?.body || "O Projeto de Bandas do Espaço Musical nasceu para proporcionar aos nossos alunos a experiência de viver uma **banda de verdade**.")}</div>
+        <ul class="bandas__chips" aria-label="O que se trabalha nos ensaios"><li>Entrosamento</li><li>Técnica</li><li>Ouvir o outro</li><li>Presença de palco</li></ul>
+        <div class="btn-row"><a class="btn btn--primary" href="${esc(wa)}">Quero tocar numa banda${ARROW}</a></div>
       </div>
-      <figure class="split-photo tilt span-6 start-7">${img(PHOTO.professores, { cls: "" })}</figure>
+      <div class="taped span-6 start-7">
+        <figure class="split-photo tilt bandas__photo"><img src="${esc(bandas?.image_url || "landing/img/banda-1600.webp")}"${bandas?.image_url ? "" : ' srcset="landing/img/banda-800.webp 800w, landing/img/banda-1600.webp 1600w, landing/img/banda-2400.webp 2400w" sizes="(max-width: 1023px) 100vw, 50vw"'} width="2400" height="1600" alt="${esc(bandas?.image_url ? "Ensaio do Projeto de Bandas" : BANDA_ALT)}" loading="lazy" decoding="async" data-source="${bandas?.image_url ? "client" : "stand-in"}" data-subject="ensaio de banda"></figure>
+        <span class="tape tape--a" aria-hidden="true">Ensaio</span>
+      </div>
     </div>
   </section>
 
-  <section class="section" id="sede" aria-labelledby="sede-h">
+  <section class="section ground-inverse torn equipe" id="professores" aria-labelledby="professores-h">
+    <div class="wrap">
+      <div class="equipe__head">
+        <div>
+          <p class="equipe__kicker">Conheça a</p>
+          <h2 id="professores-h">Nossa equipe</h2>
+          <p class="equipe__sub">do Espaço Musical <b>Álvaro Mesquita</b></p>
+          ${sobre ? `<div class="prose equipe__about">${md(sobre.body)}</div>` : ""}
+        </div>
+        <div class="equipe__mark" aria-hidden="true">${MARK}<span>Formando músicos para a vida.</span></div>
+      </div>
+      <figure class="equipe__photo">${teamImg}${ARC}</figure>
+      ${teamCards ? `<ul class="equipe__cards has-photo">${teamCards}</ul>` : ""}
+      <p class="equipe__cta"><b>Vem com a gente fazer música!</b> <span>Matrículas abertas: fale com a gente e agende a sua aula experimental.</span></p>
+    </div>
+  </section>
+
+  <section class="section torn" id="sede" aria-labelledby="sede-h">
     <div class="wrap">
       <div class="section-head"><h2 id="sede-h">${esc(sede?.title || "A nova sede")}</h2></div>
       <div class="grid grid--top">
@@ -434,7 +498,7 @@ export async function GET() {
           <p class="footer__full">${esc(place.area)}${place.cep ? ` · CEP ${esc(place.cep)}` : ""}</p>` : ""}
           <p class="footer__lede">${esc(tagline)}</p>
         </div>
-        <div class="span-3 start-7 footer__col"><h3>Escola</h3><ul><li><a href="#cursos">Cursos</a></li><li><a href="#aulas">Aulas</a></li><li><a href="#festivais">Festivais</a></li><li><a href="#sede">Sede</a></li></ul></div>
+        <div class="span-3 start-7 footer__col"><h3>Escola</h3><ul><li><a href="#cursos">Cursos</a></li><li><a href="#aulas">Aulas</a></li><li><a href="#festivais">Festivais</a></li><li><a href="#bandas">Projeto de Bandas</a></li><li><a href="#professores">Equipe</a></li><li><a href="#sede">Sede</a></li></ul></div>
         <div class="span-3 footer__col"><h3>Contato</h3><ul>
           <li><a href="/login">Área do aluno</a></li>
           ${settings?.instagram ? `<li><a href="https://instagram.com/${esc(settings.instagram)}" target="_blank" rel="noopener">Instagram</a></li>` : ""}

@@ -95,11 +95,11 @@ if (dust && !reduced) {
 
 // ------------------------------------------------------------------ revelação ao rolar
 const reveal = [
-  ...document.querySelectorAll("main > .section h2, .footer.closing h2, .split-photo, .taped, .inst__panel, .ensaio"),
+  ...document.querySelectorAll("main > .section h2, .footer.closing h2, .split-photo, .taped, .inst__panel, .ensaio, .equipe__card, .bandas__chips li"),
 ];
 reveal.forEach((el, i) => {
   el.classList.add("rv");
-  if (el.classList.contains("inst__panel")) el.style.setProperty("--rv-d", `${(i % 8) * 70}ms`);
+  if (el.matches(".inst__panel, .equipe__card, .bandas__chips li")) el.style.setProperty("--rv-d", `${(i % 8) * 70}ms`);
 });
 if (!reduced && "IntersectionObserver" in window) {
   const io = new IntersectionObserver(
