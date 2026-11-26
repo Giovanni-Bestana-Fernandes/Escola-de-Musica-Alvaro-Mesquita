@@ -2,12 +2,12 @@
 -- Os usuários (Álvaro, professores e alunos) são criados por scripts/seed.mjs.
 
 insert into public.instruments (name, slug, description, sort) values
-  ('Guitarra', 'guitarra', 'Do primeiro acorde aos solos: técnica, repertório e improvisação.', 1),
-  ('Violão',   'violao',   'Popular e erudito, dedilhado, batidas e leitura de cifras e partituras.', 2),
+  ('Guitarra', 'guitarra', 'Do primeiro acorde aos solos: técnica, repertório e improvisação.', 2),
+  ('Violão',   'violao',   'Popular e erudito, dedilhado, batidas e leitura de cifras e partituras.', 1),
   ('Baixo',    'baixo',    'Groove, linhas de baixo e a base rítmica de qualquer banda.', 3),
-  ('Teclado',  'teclado',  'Harmonia, leitura e acompanhamento para todos os estilos.', 4),
-  ('Ukulelê',  'ukulele',  'Leve, divertido e perfeito para começar na música.', 5),
-  ('Canto',    'canto',    'Técnica vocal, respiração, afinação e interpretação.', 6)
+  ('Teclado',  'teclado',  'Harmonia, leitura e acompanhamento para todos os estilos.', 6),
+  ('Ukulelê',  'ukulele',  'Leve, divertido e perfeito para começar na música.', 4),
+  ('Canto',    'canto',    'Técnica vocal, respiração, afinação e interpretação.', 5)
 on conflict (slug) do nothing;
 
 insert into public.site_settings (id, school_name, tagline, address, maps_embed_url, whatsapp, instagram, email)
@@ -17,7 +17,7 @@ values (
   'Formando músicos para a vida.',
   'Rua Exemplo, Centro',
   null,
-  '5500000000000',
+  '5514996436839',
   'escolaalvaromesquita',
   'contato@exemplo.com'
 )

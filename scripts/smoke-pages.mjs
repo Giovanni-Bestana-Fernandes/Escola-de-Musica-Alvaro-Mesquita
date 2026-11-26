@@ -47,6 +47,7 @@ const { data: fest } = await service.from("festivals").select("id").limit(1).sin
 console.log("\nVisitante");
 await page("", "/", ["Escola de rock com 6 instrumentos", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Bruno Lima", "landing/guitar.js", "landing/forms.js"]);
 await page("", "/creditos", ["Créditos das fotos", "Wikimedia"]);
+await page("", "/matricula", ["Antes de começar, veja como são as aulas", "Continuar para o WhatsApp", "phone=5514996436839", "DWj6PbAIEbT/embed"]);
 await page("", "/login", ["Entrar"]);
 await page("", "/inicio", [], 307);
 await page("", "/admin/site", [], 307);

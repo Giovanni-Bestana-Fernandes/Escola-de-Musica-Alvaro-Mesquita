@@ -110,7 +110,7 @@ const M = {
   maple: new THREE.MeshPhysicalMaterial({ map: mapleHeadTex, color: 0xffffff, roughness: 0.38, clearcoat: 0.8, clearcoatRoughness: 0.2 }),
   rosewood: new THREE.MeshPhysicalMaterial({ map: rosewoodTex, color: 0xffffff, roughness: 0.7, clearcoat: 0.1 }),
   mapleSatin: new THREE.MeshPhysicalMaterial({ map: mapleTex, color: 0xffffff, roughness: 0.55, clearcoat: 0.25, side: THREE.DoubleSide }),
-  walnut: new THREE.MeshStandardMaterial({ color: 0x5c3418, roughness: 0.6 }),
+  walnut: new THREE.MeshStandardMaterial({ color: 0x8a5528, roughness: 0.6 }),
   dot: new THREE.MeshPhysicalMaterial({ color: 0xf3eee2, roughness: 0.25, iridescence: 0.8, iridescenceIOR: 1.5, clearcoat: 1 }),
   bone: new THREE.MeshStandardMaterial({ color: 0xf4ecd8, roughness: 0.5 }),
   // ferragens douradas (a cor da marca): tarraxas, ponte, alavanca, placa do braço
@@ -448,9 +448,11 @@ function targetPose(scrollP) {
   // B: virada no eixo do braço, as costas do braço atravessando a tela em diagonal
   // B: só o braço, visto por trás, deitado na horizontal e grande, cobrindo a largura toda da tela.
   // (rz = -90°: o braço aponta para a direita; spin = 180°: as costas de maple para a frente)
-  const bs = (v.h * 2 * 1.5) / 5.6; // a largura do braço cobre a altura toda da tela (com folga)
+  // a largura do braço (cerca de 4,8 cm neste trecho) cobre 100% da altura visível, com folga para as bordas
+  // arredondadas ficarem fora da tela
+  const bs = (v.h * 2 * 1.6) / 4.8;
   const mid = 14; // ponto do braço (y local) que fica no centro da tela
-  const B = { x: -mid * bs, y: -v.h * 0.22, z: 0, rz: -Math.PI / 2, ry: 0.0, rx: 0.16, spin: Math.PI, s: bs };
+  const B = { x: -mid * bs, y: 0, z: 0, rz: -Math.PI / 2, ry: 0, rx: 0, spin: Math.PI, s: bs };
   const t = ease(Math.min(1, Math.max(0, scrollP)));
   const out = {};
   for (const k in A) out[k] = lerp(A[k], B[k], t);
@@ -514,8 +516,8 @@ let raf = 0,
   cur = null,
   needs = true;
 function scrollProgress() {
-  // 0 no topo, 1 depois do primeiro quadro e meio
-  return Math.min(1, scrollY / (H * 1.3));
+  // 0 no topo, 1 quando a primeira seção depois do hero chega ao topo (o braço já cobre a tela inteira)
+  return Math.min(1, scrollY / (H * 0.85));
 }
 // depois que o braço cobre o fundo (progresso 1), a guitarra fica imóvel: desenha uma vez e para.
 let lockedDrawn = false;

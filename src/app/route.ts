@@ -148,11 +148,10 @@ export async function GET() {
   const festivais = sec("festivais");
   const addr = street(settings?.address ?? null);
   const mapUrl = addr ? `https://www.openstreetmap.org/search?query=${encodeURIComponent(addr)}` : null;
-  const wa = settings?.whatsapp
-    ? `https://wa.me/${settings.whatsapp}?text=${encodeURIComponent("Olá, quero agendar uma aula.")}`
-    : "#sede";
-  const waAttrs = settings?.whatsapp ? ' target="_blank" rel="noopener"' : "";
-  const MAIN = "Agendar uma aula";
+  // "Quero me matricular" abre a tela do vídeo (/matricula), que depois leva ao WhatsApp
+  const wa = "/matricula";
+  const waAttrs = "";
+  const MAIN = "Quero me matricular";
   const insNames = instruments.map((i) => i.name.toLowerCase());
   const nIns = instruments.length || 6;
   const orderedTeachers = [...teachers].sort((a, b) =>
@@ -281,7 +280,7 @@ export async function GET() {
       <div class="hero__text span-5">
         ${addr ? `<p class="hero__kicker"><span class="dot" aria-hidden="true"></span>Nova sede: ${esc(addr)}</p>` : ""}
         <h1 id="hero-h">Escola de rock com ${nIns} instrumentos</h1>
-        <p class="hero__lead">${esc(cap(listPt(insNames)))}, do primeiro riff ao palco do festival. Aulas na sede ou online pelo Google Meet, com professor, agenda e chat no app da escola.</p>
+        <p class="hero__lead">${esc(cap(listPt(insNames)))}, do iniciante ao avançado. Cada aula é pensada pra sua evolução, com atenção individual e foco no que você quer tocar.</p>
         <div class="btn-row"><a class="btn btn--primary" href="${esc(wa)}"${waAttrs}>${MAIN}${ARROW}</a><a class="btn btn--secondary" href="#cursos">Ver os cursos</a></div>
       </div>
       <div class="hero__space span-6 start-7">
@@ -292,7 +291,7 @@ export async function GET() {
 
   <section class="section" id="cursos" style="--hm: 2" aria-labelledby="cursos-h">
     <div class="wrap">
-      <div class="section-head"><h2 id="cursos-h">${nIns} cursos de instrumento e canto</h2><p>Todos na sede ou online, com o mesmo professor do começo ao fim.</p></div>
+      <div class="section-head"><h2 id="cursos-h">${nIns} cursos de instrumento e canto</h2><p>Método prático e direto, ambiente preparado e acolhedor e o professor acompanhando de perto a sua evolução. Na sede ou online.</p></div>
       <div class="grid grid--top fill" data-peek>
         <ul class="rows span-6">${rows}</ul>
         <div class="frame frame--photo frame--fill span-6 start-7">${peekImgs}</div>
@@ -360,6 +359,10 @@ export async function GET() {
           ${addr ? `<p class="type-moment"><a href="${esc(mapUrl!)}" target="_blank" rel="noopener">${esc(addr)}</a></p>` : ""}
           <div class="prose">${sede ? md(sede.body) : ""}
           ${mapUrl ? `<p><a class="link" href="${esc(mapUrl)}" target="_blank" rel="noopener">Ver o caminho no mapa</a></p>` : ""}</div>
+          <div class="ensaio">
+            <h3>Prática de banda e sala de ensaio</h3>
+            <p>Se você já toca, a sede tem sala de ensaio equipada pra sua banda dar o próximo passo.</p>
+          </div>
         </div>
         <figure class="split-photo span-6 start-7">${img(PHOTO.sala, { cls: "" })}</figure>
       </div>
@@ -372,7 +375,7 @@ export async function GET() {
     <div class="closing__cta close--type">
       <div class="section-head">
         <h2 id="close-h">${MAIN}</h2>
-        <p>Escreva no WhatsApp qual instrumento você quer aprender e os horários livres. A aula pode ser na sede ou online.</p>
+        <p>Poucos horários disponíveis. Veja como são as aulas e peça no WhatsApp a tabela de horários e valores.</p>
       </div>
       <a class="btn btn--primary btn--xl btn--wide" href="${esc(wa)}"${waAttrs}>${MAIN}${ARROW}</a>
     </div>
