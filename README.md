@@ -100,11 +100,15 @@ Para instalar no celular, abra o site, toque em **Compartilhar → Adicionar à 
   - O professor recebe o pedido em *Início* e aprova ou recusa. Ao aprovar, o calendário é atualizado.
 - **Festivais:** crie o festival, envie várias fotos de uma vez (elas são otimizadas automaticamente) e cole links do YouTube. Publique os vídeos como **"Não listado"**.
 - **Página inicial:** em *Página inicial*, edite os textos, o endereço da nova sede, o mapa do Google, o WhatsApp e o Instagram.
+- **Fotos do site:**
+  - A sala de ensaio do topo e os instrumentos do carrossel são fotos livres do Wikimedia Commons. Elas ficam em `public/landing/img` e os créditos aparecem em `/creditos`.
+  - Para trocar uma imagem, edite a lista em `scripts/fetch-instruments.mjs` e rode `npm run images`.
+  - As cores e os tamanhos de cada instrumento ficam em `CUT`, no arquivo `src/app/route.ts`.
 
 ## Estrutura
 
 ```
-src/app/(public)/page.tsx       Site público
+src/app/route.ts                Site público (HTML + public/landing: stage.js, instruments.js, forms.js)
 src/app/(auth)/login            Login
 src/app/(app)/...               Área logada: inicio, calendario, aulas/[id], chat, festivais, alunos, perfil, admin/*
 src/lib/actions/*.ts            Server Actions (aulas, chat, festivais, pessoas, site)

@@ -1,12 +1,14 @@
 /**
  * Página pública (site da escola) servida como HTML puro, no padrão do kit design-taste-frontend
- * (public/assets: system.css, motion, layout, moments) + a guitarra 3D em Three.js (public/landing/guitar.js)
- * e as formas musicais de cada seção (public/landing/forms.js).
+ * (public/assets: system.css, motion, layout, moments) + a sala de ensaio com luzes e o cabo que liga as seções
+ * (public/landing/stage.js), o carrossel de cursos (public/landing/instruments.js) e as formas musicais de cada
+ * seção (public/landing/forms.js).
  * Fica fora do Tailwind da área logada para os dois sistemas visuais não se misturarem.
  * Os textos editáveis vêm do Supabase (Administração → Página inicial).
  *
  * type: service · site-kind other
- * deal: hero split; a guitarra 3D fica fixa ao fundo, gira com a rolagem e ao arrastar (pedido do cliente),
+ * deal: hero sobre a foto da sala de ensaio (luzes e poeira animadas), carrossel colorido por instrumento,
+ *       seções com borda rasgada ligadas por um cabo de guitarra (pedidos do cliente),
  *       nav-split, footer-visit, close-type, rhythm surface-pairs, buttons arrow, mark: emblema da logo
  * palette: cores da logo (preto + dourado) via start.mjs brand · type: Newsreader / Hanken Grotesk
  * moments: pinned-chapters (#aulas), picture-develops (#festivais)
@@ -118,6 +120,27 @@ function img(p: Photo, { sizes = "(max-width: 1023px) 100vw, 50vw", cls = "frame
 
 const CREDITS_SOURCES = "Fotos via Wikimedia Commons";
 
+// Carrossel de cursos: cada instrumento tem a sua cor e o seu recorte (public/landing/img, de scripts/fetch-instruments.mjs).
+// "wide" = instrumento deitado (teclado): fica inclinado na faixa estreita e deitado no painel aberto.
+interface Cut {
+  color: string;
+  ink: string;
+  w: number;
+  h: number;
+  alt: string;
+  wide?: boolean;
+}
+const CUT: Record<string, Cut> = {
+  violao: { color: "#d9861a", ink: "#1b1712", w: 596, h: 1400, alt: "Violão clássico de tampo claro e cordas de náilon" },
+  guitarra: { color: "#d4252d", ink: "#ffffff", w: 433, h: 1400, alt: "Guitarra elétrica vermelha com escudo branco e três captadores" },
+  baixo: { color: "#1d4fd8", ink: "#ffffff", w: 474, h: 1400, alt: "Contrabaixo elétrico vermelho com escudo creme e braço longo" },
+  ukulele: { color: "#169a57", ink: "#ffffff", w: 294, h: 948, alt: "Ukulelê de madeira clara com quatro cordas" },
+  canto: { color: "#7b2fd0", ink: "#ffffff", w: 476, h: 1400, alt: "Microfone condensador de estúdio prateado" },
+  teclado: { color: "#f06a14", ink: "#1b1712", w: 500, h: 295, alt: "Teclado de 88 teclas azul-acinzentado visto em diagonal", wide: true },
+};
+const CUT_FALLBACK = ["#c8952e", "#0f8b8d", "#c2185b", "#5d4037"];
+const SALA_ALT = "Sala de ensaio escura com bateria, amplificadores e a banda tocando sob luz roxa e âmbar";
+
 // ---------------------------------------------------------------- page
 export async function GET() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -159,19 +182,40 @@ export async function GET() {
   );
   const year = new Date().getFullYear();
 
-  // ---- cursos (peek-list): uma linha por instrumento, a foto troca com a linha
-  const rows = instruments
-    .map(
-      (i, k) =>
-        `<li data-peek-to="${esc(i.slug)}" tabindex="0"${k === 0 ? ' aria-current="true"' : ""}><span class="rows__name">${esc(i.name)}</span>${i.description ? `<p>${esc(i.description)}</p>` : ""}</li>`,
-    )
-    .join("");
-  const peekImgs = instruments
+  // ---- cursos: um painel colorido por instrumento (carrossel em acordeão, public/landing/instruments.js)
+  const panels = instruments
     .map((i, k) => {
-      const p = PHOTO[i.slug] ?? PHOTO.guitarra;
-      return img(p, { sizes: "(max-width: 1023px) 200vw, 50vw", attrs: `data-peek-for="${esc(i.slug)}"${k ? " hidden" : ""}` });
+      const cut = CUT[i.slug];
+      const color = cut?.color ?? CUT_FALLBACK[k % CUT_FALLBACK.length];
+      const ink = cut?.ink ?? "#ffffff";
+      const num = String(k + 1).padStart(2, "0");
+      const player = PHOTO[i.slug];
+      const id = `curso-${esc(i.slug)}`;
+      const figure = cut
+        ? `<figure class="inst__fig"><img class="inst__img" src="landing/img/${esc(i.slug)}.webp" width="${cut.w}" height="${cut.h}" alt="${esc(cut.alt)}" loading="lazy" decoding="async" data-source="stand-in" data-subject="${esc(cut.alt)}"></figure>`
+        : "";
+      return `<article class="inst__panel${cut?.wide ? " is-wide" : ""}${cut ? "" : " no-cut"}" style="--c:${color};--ci:${ink}" data-slug="${esc(i.slug)}">
+        <button class="inst__hit" type="button" aria-expanded="false" aria-controls="${id}"><span class="inst__num">${num}</span><span class="inst__vname">${esc(i.name)}</span><span class="sr-only">: ver o curso</span></button>
+        ${player ? `<div class="inst__player" aria-hidden="true">${img(player, { cls: "", sizes: "(max-width: 899px) 100vw, 40vw" })}</div>` : ""}
+        ${figure}
+        <div class="inst__body" id="${id}">
+          <p class="inst__big" aria-hidden="true">${num}</p>
+          <h3 class="inst__title">${esc(i.name)}</h3>
+          ${i.description ? `<p class="inst__desc">${esc(i.description)}</p>` : ""}
+          <div class="inst__actions">
+            <a class="btn btn--primary" href="${esc(wa)}">${MAIN}${ARROW}</a>
+            ${cut ? `<button class="inst__zoom" type="button">Ver de perto</button>` : ""}
+          </div>
+          <div class="inst__now" aria-hidden="true"><span class="bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span><b>Aula de ${esc(i.name.toLowerCase())}</b><small>Na sede ou online</small></span></div>
+        </div>
+        <button class="inst__close" type="button" aria-label="Fechar ${esc(i.name)}">&times;</button>
+      </article>`;
     })
     .join("");
+  const marquee = (instruments.length ? instruments.map((i) => i.name) : ["Violão", "Guitarra", "Baixo", "Ukulelê", "Canto", "Teclado"])
+    .map((n) => `<span>${esc(n)}</span><i>★</i>`)
+    .join("");
+  const h1 = "Espaço musical Alvaro Mesquita".split(" ").map((w, k) => `<span class="w" style="--i:${k}">${esc(w)}</span>`).join(" ");
 
   const teacherRows = orderedTeachers
     .map(
@@ -206,8 +250,7 @@ export async function GET() {
 <link rel="stylesheet" href="assets/layout/layout.css">
 <link rel="stylesheet" href="assets/icons/icon.css">
 <link rel="stylesheet" href="landing/landing.css">
-<script type="importmap">{ "imports": { "three": "/vendor/three/three.module.min.js" } }</script>
-<link rel="modulepreload" href="/vendor/three/three.module.min.js">
+<link rel="preload" as="image" href="landing/img/sala-1600.webp" imagesrcset="landing/img/sala-800.webp 800w, landing/img/sala-1600.webp 1600w, landing/img/sala-2400.webp 2400w" imagesizes="100vw" fetchpriority="high">
 <style>
 :root {
   --p-bg: #f6f1e6; --p-surface: #ece3d1; --p-ink: #1b1712; --p-muted: #6a6152;
@@ -233,8 +276,6 @@ export async function GET() {
   .brand-mark { width: 30px; height: 33px; flex: none; }
   .nav__logo { display: inline-flex; align-items: center; gap: 10px; }
   .footer .brand-mark { width: 36px; height: 40px; }
-  /* the hero's picture: the guitar render stands on the page's ground, no box */
-  .hero__space { min-height: 1px; }
   /* the type moment: the street of the new building set large */
   .type-moment { font: var(--display-weight) clamp(32px, 3.6vw, 52px)/1.05 var(--font-display); letter-spacing: -0.03em; margin: 0 0 var(--s-6); }
   .type-moment a { color: inherit; text-decoration: none; }
@@ -253,7 +294,7 @@ export async function GET() {
 <body>
 <!-- type: service
      deal: hero split, nav nav-split, close close-type, footer footer-visit, rhythm surface-pairs, buttons arrow, mark: o emblema da logo
-     moments: pinned-chapters (#aulas), picture-develops (#festivais); a guitarra 3D gira com a rolagem (pedido do cliente) -->
+     moments: pinned-chapters (#aulas), picture-develops (#festivais); fundo de foto da sala de ensaio com luzes, carrossel de cursos colorido e o cabo que liga as seções (pedidos do cliente) -->
 <header class="nav nav--split nav--tone">
   <div class="wrap nav__bar">
     <a class="skip-link" href="#top">Pular para o conteúdo</a>
@@ -273,30 +314,38 @@ export async function GET() {
 </header>
 
 <main id="top">
-  <section class="hero hero--split" data-enter aria-labelledby="hero-h">
-    <canvas class="stage" id="stage" aria-hidden="true"></canvas>
-    <div class="veil" aria-hidden="true"></div>
-    <div class="wrap"><div class="hero-text grid hero__grid">
-      <div class="hero__text span-5">
+  <section class="hero hero--stage ground-inverse" data-enter aria-labelledby="hero-h">
+    <div class="stage" aria-hidden="true">
+      <img class="stage__photo" src="landing/img/sala-1600.webp" srcset="landing/img/sala-800.webp 800w, landing/img/sala-1600.webp 1600w, landing/img/sala-2400.webp 2400w" sizes="100vw" width="2400" height="1600" alt="" fetchpriority="high" decoding="async" data-source="stand-in" data-subject="${esc(SALA_ALT)}">
+      <span class="stage__beam stage__beam--1"></span><span class="stage__beam stage__beam--2"></span><span class="stage__beam stage__beam--3"></span>
+      <canvas class="stage__dust"></canvas>
+      <span class="stage__shade"></span>
+      <span class="stage__amp"><i></i></span>
+    </div>
+    <div class="wrap hero__wrap">
+      <div class="hero__text">
         ${addr ? `<p class="hero__kicker"><span class="dot" aria-hidden="true"></span>Nova sede: ${esc(addr)}</p>` : ""}
-        <h1 id="hero-h">Escola de rock com ${nIns} instrumentos</h1>
+        <h1 id="hero-h">${h1}</h1>
         <p class="hero__lead">${esc(cap(listPt(insNames)))}, do iniciante ao avançado. Cada aula é pensada pra sua evolução, com atenção individual e foco no que você quer tocar.</p>
         <div class="btn-row"><a class="btn btn--primary" href="${esc(wa)}"${waAttrs}>${MAIN}${ARROW}</a><a class="btn btn--secondary" href="#cursos">Ver os cursos</a></div>
       </div>
-      <div class="hero__space span-6 start-7">
-        <img class="hero__still" src="landing/guitar-still.webp" width="900" height="1200" alt="Guitarra elétrica azul-clara com escudo branco e braço de madeira clara" fetchpriority="high" data-source="render" data-subject="guitarra elétrica">
-      </div>
-    </div></div>
-  </section>
-
-  <section class="section" id="cursos" style="--hm: 2" aria-labelledby="cursos-h">
-    <div class="wrap">
-      <div class="section-head"><h2 id="cursos-h">${nIns} cursos de instrumento e canto</h2><p>Método prático e direto, ambiente preparado e acolhedor e o professor acompanhando de perto a sua evolução. Na sede ou online.</p></div>
-      <div class="grid grid--top fill" data-peek>
-        <ul class="rows span-6">${rows}</ul>
-        <div class="frame frame--photo frame--fill span-6 start-7">${peekImgs}</div>
-      </div>
+      <p class="sr-only">${esc(SALA_ALT)}.</p>
     </div>
+  </section>
+  <div class="marquee" aria-hidden="true"><div class="marquee__track">${marquee}${marquee}${marquee}${marquee}</div></div>
+
+  <section class="section inst torn" id="cursos" aria-labelledby="cursos-h">
+    <div class="wrap">
+      <div class="section-head"><h2 id="cursos-h">${nIns} cursos de instrumento e canto</h2><p>Método prático e direto, ambiente preparado e acolhedor e o professor acompanhando de perto a sua evolução. Clique num instrumento para ver o curso.</p></div>
+      <div class="inst__deck" data-inst>${panels}</div>
+    </div>
+    <dialog class="zoom" aria-label="Instrumento ampliado">
+      <div class="zoom__stage"><img class="zoom__img" alt=""></div>
+      <p class="zoom__cap"><span class="zoom__num"></span><span class="zoom__name"></span><small>Clique na imagem para aproximar</small></p>
+      <button class="zoom__btn zoom__prev" type="button" aria-label="Instrumento anterior">&larr;</button>
+      <button class="zoom__btn zoom__next" type="button" aria-label="Próximo instrumento">&rarr;</button>
+      <button class="zoom__btn zoom__x" type="button" aria-label="Fechar">&times;</button>
+    </dialog>
   </section>
 
   <section class="section" id="aulas" style="--h: 2" data-moment="pinned-chapters" aria-labelledby="aulas-h">
@@ -325,7 +374,7 @@ export async function GET() {
     </div>
   </section>
 
-  <section class="section ground-inverse" id="festivais" aria-labelledby="festivais-h">
+  <section class="section ground-inverse torn" id="festivais" aria-labelledby="festivais-h">
     <div class="wrap grid grid--top">
       <div class="span-6">
         <div class="section-head">
@@ -334,11 +383,11 @@ export async function GET() {
         <div class="prose">${md(festivais?.body || "Nos festivais da escola, todos os alunos tocam. As fotos e os vídeos de cada festival ficam na área do aluno.")}
         <p><a class="link" href="/login">Ver as fotos na área do aluno</a></p></div>
       </div>
-      <figure class="develop span-6 start-7" data-moment="picture-develops">${img(PHOTO.festival, { cls: "" })}</figure>
+      <div class="taped span-6 start-7"><figure class="develop" data-moment="picture-develops">${img(PHOTO.festival, { cls: "" })}</figure><span class="tape tape--a" aria-hidden="true">Ao vivo</span></div>
     </div>
   </section>
 
-  <section class="section" id="professores" aria-labelledby="professores-h">
+  <section class="section torn" id="professores" aria-labelledby="professores-h">
     <div class="wrap grid grid--top">
       <div class="span-6">
         <div class="section-head">
@@ -347,7 +396,7 @@ export async function GET() {
         </div>
         ${teacherRows ? `<ul class="rows">${teacherRows}</ul>` : ""}
       </div>
-      <figure class="split-photo span-6 start-7">${img(PHOTO.professores, { cls: "" })}</figure>
+      <figure class="split-photo tilt span-6 start-7">${img(PHOTO.professores, { cls: "" })}</figure>
     </div>
   </section>
 
@@ -364,13 +413,13 @@ export async function GET() {
             <p>Se você já toca, a sede tem sala de ensaio equipada pra sua banda dar o próximo passo.</p>
           </div>
         </div>
-        <figure class="split-photo span-6 start-7">${img(PHOTO.sala, { cls: "" })}</figure>
+        <div class="taped span-6 start-7"><figure class="split-photo tilt">${img(PHOTO.sala, { cls: "" })}</figure><span class="tape tape--b" aria-hidden="true">Ensaio</span></div>
       </div>
     </div>
   </section>
 </main>
 
-<footer class="footer closing footer--dark ground-inverse" id="contact" aria-labelledby="close-h">
+<footer class="footer closing footer--dark ground-inverse torn" id="contact" aria-labelledby="close-h">
   <div class="wrap">
     <div class="closing__cta close--type">
       <div class="section-head">
@@ -408,7 +457,8 @@ export async function GET() {
 <script type="module" src="assets/system.js"></script>
 <script type="module" src="assets/motion/motion.js"></script>
 <script type="module" src="assets/layout/layout.js"></script>
-<script type="module" src="landing/guitar.js"></script>
+<script type="module" src="landing/stage.js"></script>
+<script type="module" src="landing/instruments.js"></script>
 <script type="module" src="landing/forms.js"></script>
 </body>
 </html>`;

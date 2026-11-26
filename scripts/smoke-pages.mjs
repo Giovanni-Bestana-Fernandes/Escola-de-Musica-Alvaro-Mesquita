@@ -45,7 +45,7 @@ const diegoConv = convs.find((c) => c.student.email === "diego@demo.com").id;
 const { data: fest } = await service.from("festivals").select("id").limit(1).single();
 
 console.log("\nVisitante");
-await page("", "/", ["Escola de rock com 6 instrumentos", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Bruno Lima", "landing/guitar.js", "landing/forms.js"]);
+await page("", "/", ["hero-h", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Bruno Lima", "curso-teclado", "landing/img/sala-1600.webp", "landing/stage.js", "landing/instruments.js", "landing/forms.js"]);
 await page("", "/creditos", ["Créditos das fotos", "Wikimedia"]);
 await page("", "/matricula", ["Antes de começar, veja como são as aulas", "Continuar para o WhatsApp", "phone=5514996436839", "DWj6PbAIEbT/embed"]);
 await page("", "/login", ["Entrar"]);

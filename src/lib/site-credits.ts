@@ -1,5 +1,12 @@
-// Créditos das fotos substitutas (de public/assets/img/credits.json, gerado pelo photos.mjs fetch).
-export const PHOTO_CREDITS: { id: string; by: string; licence: string; page: string }[] = [
+// Créditos das fotos substitutas (de public/assets/img/credits.json, gerado pelo photos.mjs fetch) e das imagens
+// da landing (sala de ensaio e instrumentos recortados, de public/landing/img/credits.json, gerado por npm run images).
+import landing from "../../public/landing/img/credits.json";
+
+type Credit = { id: string; by: string; licence: string; page: string };
+const LANDING: Credit[] = landing.map(({ id, by, licence, page }) => ({ id, by, licence, page }));
+
+export const PHOTO_CREDITS: Credit[] = [
+  ...LANDING,
   {
     "id": "f93045510",
     "by": "Nataev",

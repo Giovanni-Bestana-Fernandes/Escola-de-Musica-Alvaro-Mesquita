@@ -34,36 +34,46 @@ const queue = () => {
 addEventListener("scroll", queue, { passive: true });
 addEventListener("resize", queue);
 
-// ------------------------------------------------------------------ 1. Cursos: a palheta vira a máscara da foto
+// ------------------------------------------------------------------ 1. Cursos: a palheta cai do palco no carrossel
+// A palheta dourada da logo sai do hero girando no próprio eixo (efeito de moeda), atravessa a borda rasgada e
+// quica em cima dos painéis dos instrumentos. Passar o mouse nela (ou tocar) faz ela girar de novo.
 {
   const sec = document.getElementById("cursos");
-  const frame = sec?.querySelector(".frame--photo");
-  if (frame) {
-    frame.classList.add("pick-mask");
-    let open = false;
+  const deck = sec?.querySelector(".inst__deck");
+  if (deck) {
+    const pick = document.createElement("img");
+    pick.className = "pickdrop";
+    pick.src = "landing/pick-gold.svg";
+    pick.alt = "";
+    pick.setAttribute("aria-hidden", "true");
+    sec.prepend(pick);
+    const bounce = (t) => {
+      // queda com dois quiques (easeOutBounce)
+      const n = 7.5625, d = 2.75;
+      if (t < 1 / d) return n * t * t;
+      if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
+      if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
+      return n * (t -= 2.625 / d) * t + 0.984375;
+    };
     forms.push({
       el: sec,
       update(e) {
-        const flip = (1 - clamp(e * 1.6)) * 180; // a primeira parte da entrada é a moeda girando
-        const size = 26 + Math.pow(clamp((e - 0.25) / 0.75), 1.6) * 300; // depois a palheta se abre
-        frame.style.setProperty("--flip", `${flip}deg`);
-        frame.style.setProperty("--pick", `${size}%`);
-        const o = e >= 0.999;
-        if (o !== open) frame.classList.toggle("is-open", (open = o));
+        const k = clamp(e * 1.15);
+        const top = deck.offsetTop - pick.offsetHeight * 0.55; // pousa na borda de cima dos painéis
+        const y = -sec.offsetTop * 0.18 + (top + sec.offsetTop * 0.18) * bounce(k);
+        pick.style.setProperty("--y", `${y.toFixed(1)}px`);
+        pick.style.setProperty("--spin", `${((1 - k) * 720).toFixed(1)}deg`);
+        pick.style.setProperty("--tilt", `${(k * 18).toFixed(1)}deg`);
       },
     });
-    // passar o mouse (ou tocar) num curso: a palheta dá meia-volta e revela a foto daquele curso
-    sec.querySelectorAll("[data-peek-to]").forEach((row) => {
-      const go = () => {
-        if (reduced) return;
-        frame.classList.remove("is-flipping");
-        void frame.offsetWidth;
-        frame.classList.add("is-flipping");
-      };
-      row.addEventListener(finePointer ? "mouseenter" : "click", go);
-      row.addEventListener("focus", go);
-    });
-    frame.addEventListener("animationend", () => frame.classList.remove("is-flipping"));
+    const flick = () => {
+      if (reduced) return;
+      pick.classList.remove("is-flick");
+      void pick.offsetWidth;
+      pick.classList.add("is-flick");
+    };
+    pick.addEventListener("pointerenter", flick);
+    pick.addEventListener("click", flick);
   }
 }
 
@@ -236,7 +246,7 @@ addEventListener("resize", queue);
     const needle = svg("g", { class: "vinyl__needle" }, s);
     svg("line", { x1: "92", y1: "-92", x2: "26", y2: "-8" }, needle);
     svg("circle", { cx: "92", cy: "-92", r: "5" }, needle);
-    col.prepend(wrap);
+    sec.prepend(wrap); // fica pendurado na borda entre Festivais e Professores
     let angle = 0,
       speed = 0,
       raf = 0,
@@ -363,6 +373,7 @@ addEventListener("resize", queue);
         if (!settled && e >= 0.92) {
           settled = true;
           box.classList.add("is-settled");
+          if (!reduced) setTimeout(() => btn.classList.add("is-hit"), 700);
         }
         if (!settled && visible && !raf) raf = requestAnimationFrame(swing);
       },

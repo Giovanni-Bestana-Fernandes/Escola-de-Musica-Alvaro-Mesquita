@@ -12,8 +12,8 @@
     "seed:demo": "node --env-file=.env.local scripts/seed.mjs --demo",
     "test:rls": "node --env-file=.env.local scripts/test-rls.mjs",
     "test:pages": "node --env-file=.env.local scripts/smoke-pages.mjs",
-    "postinstall": "node scripts/copy-vendor.mjs",
-    "shots": "node --env-file=.env.local scripts/shots.mjs"
+    "shots": "node --env-file=.env.local scripts/shots.mjs",
+    "images": "node scripts/fetch-instruments.mjs"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.17",
@@ -30,8 +30,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "server-only": "^0.0.1",
-    "three": "^0.170.0"
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

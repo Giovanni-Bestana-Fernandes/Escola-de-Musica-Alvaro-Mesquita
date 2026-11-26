@@ -1,4 +1,4 @@
-// Screenshots da landing (várias posições de rolagem e um arraste) e da área logada de cada perfil.
+// Screenshots da landing (várias posições de rolagem, o carrossel aberto e a ampliação) e da área logada de cada perfil.
 // Usa o Chrome instalado (playwright-core, sem baixar navegador). Requer o app rodando e os dados de demonstração.
 // Uso: npm run shots  [APP_URL=http://localhost:3000] [ONLY=landing|app] [OUT=.taste-skill/shots/app]
 import { chromium } from "playwright-core";
@@ -37,25 +37,38 @@ async function landing(w, h, tag) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  await page.goto(APP + "/", { waitUntil: "networkidle" });
-  await page.waitForSelector(".stage.is-ready", { timeout: 20000 }).catch(() => errors.push("guitarra não ficou pronta"));
-  await page.waitForTimeout(800);
+  await page.goto(APP + "/", { waitUntil: "load" });
+  await page.waitForTimeout(3000);
   const total = await page.evaluate(() => document.documentElement.scrollHeight);
-  const stops = [0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 8].map((k) => Math.round(k * h)).filter((y) => y < total);
+  const stops = [0, 0.5, 1, 1.5, 2, 2.5, 3, 4, 5, 6, 7, 8, 9].map((k) => Math.round(k * h)).filter((y) => y < total);
   for (const y of stops) {
     await page.evaluate((yy) => window.scrollTo(0, yy), y);
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${OUT}/landing-${tag}-${String(y).padStart(5, "0")}.png` });
   }
-  // arrastar a guitarra no hero
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${OUT}/landing-${tag}-end.png` });
+  // carrossel: fechado, um painel aberto e a ampliação
+  await page.evaluate(() => document.querySelector(".inst__deck").scrollIntoView({ block: "center" }));
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}/landing-${tag}-deck.png` });
+  for (const slug of (process.env.PANELS ?? "guitarra,teclado").split(",")) {
+    await page.click(`.inst__panel[data-slug="${slug}"] .inst__hit`);
+    await page.waitForTimeout(1500);
+    if (w < 900) await page.evaluate((s) => document.querySelector(`.inst__panel[data-slug="${s}"]`).scrollIntoView({ block: "start" }), slug);
+    else await page.evaluate(() => document.querySelector(".inst__deck").scrollIntoView({ block: "center" }));
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${OUT}/landing-${tag}-open-${slug}.png` });
+  }
+  await page.click(".inst__panel.is-open .inst__zoom");
+  await page.waitForTimeout(900);
+  await page.screenshot({ path: `${OUT}/landing-${tag}-zoom.png` });
+  await page.keyboard.press("ArrowRight");
   await page.waitForTimeout(700);
-  await page.mouse.move(w * 0.72, h * 0.5);
-  await page.mouse.down();
-  for (let i = 1; i <= 12; i++) await page.mouse.move(w * 0.72 - i * 25, h * 0.5 + i * 4, { steps: 2 });
-  await page.waitForTimeout(120);
-  await page.screenshot({ path: `${OUT}/landing-${tag}-drag.png` });
-  await page.mouse.up();
+  await page.screenshot({ path: `${OUT}/landing-${tag}-zoom-next.png` });
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(800);
   console.log(`landing ${tag}: ${stops.length} posições${errors.length ? "  ERROS: " + errors.join(" | ") : ""}`);
   await page.close();
 }
