@@ -1,0 +1,232 @@
+/* Landing clara: a guitarra 3D fixa ao fundo e as formas musicais de cada seção. Página CSS sobre o kit
+   (public/assets/system.css); não altera os arquivos do kit. */
+
+/* ---------------------------------------------------------------- palco da guitarra */
+.stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.stage.is-ready { opacity: 1; }
+.no-webgl .stage { display: none; }
+/* o véu creme: some no topo e cresce com a rolagem, para o texto ficar legível sobre o braço */
+/* a guitarra parada: no celular é a imagem do hero (o 3D aparece quando o braço vira fundo);
+   sem WebGL, ou com o shader recusado, ela aparece também no computador */
+.hero__space { display: flex; align-items: center; justify-content: center; min-height: 1px; }
+.hero__still { display: none; width: 100%; height: 100%; max-height: 100%; object-fit: contain; }
+.no-webgl .hero__still { display: block; }
+@media (max-width: 700px) {
+  .hero__still { display: block; max-height: min(300px, 36svh); }
+  .stage.is-ready { opacity: clamp(0, calc((var(--scroll, 0) - 0.45) * 2.5), 1); }
+}
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--p-bg);
+  opacity: calc(min(1, var(--scroll, 0) / 1.3) * 0.58);
+}
+html.is-dragging, html.is-dragging * { cursor: grabbing !important; user-select: none; }
+main > .hero, main > .section { cursor: grab; }
+main > .hero a, main > .section a, main > .section li, main > .hero .btn { cursor: pointer; }
+
+/* conteúdo acima do palco; seções transparentes, fotos e cartões opacos */
+.nav, main, .footer.closing, .actionbar { position: relative; z-index: 2; }
+.nav { position: fixed; z-index: 10; }
+.actionbar { position: fixed; z-index: 10; }
+main > section, main > .section, main > .hero { background: transparent; }
+.footer.closing { background: var(--p-inv-bg); }
+/* preto e dourado da marca: barra do topo, palco dos festivais e rodapé */
+#festivais.ground-inverse, .footer.closing.ground-inverse { background: var(--p-inv-bg); }
+.nav.nav--tone { background: var(--p-inv-bg); border-bottom-color: #2c2620; }
+.frame--photo, .develop, .split-photo { box-shadow: 0 18px 50px -28px rgba(27, 23, 18, 0.35); }
+
+/* ---------------------------------------------------------------- 1. palheta como máscara da foto */
+.pick-mask {
+  -webkit-mask: url("pick.svg") center / var(--pick, 300%) no-repeat;
+  mask: url("pick.svg") center / var(--pick, 300%) no-repeat;
+  transform: perspective(1400px) rotateY(var(--flip, 0deg));
+  will-change: transform, mask-size;
+}
+.pick-mask.is-open { -webkit-mask: none; mask: none; }
+.pick-mask.is-flipping { animation: pick-flip 0.7s cubic-bezier(0.3, 0.7, 0.2, 1); }
+@keyframes pick-flip {
+  0% { transform: perspective(1400px) rotateY(0); -webkit-mask-size: 300%; mask-size: 300%; }
+  45% { transform: perspective(1400px) rotateY(90deg); -webkit-mask-size: 70%; mask-size: 70%; }
+  100% { transform: perspective(1400px) rotateY(0); -webkit-mask-size: 300%; mask-size: 300%; }
+}
+.pick-mask.is-open.is-flipping {
+  -webkit-mask: url("pick.svg") center / 300% no-repeat;
+  mask: url("pick.svg") center / 300% no-repeat;
+}
+
+/* ---------------------------------------------------------------- 2. pentagrama */
+.mo-pc__text { position: relative; }
+.staff { position: relative; margin-top: var(--s-6); height: 124px; max-width: 560px; color: var(--p-ink); }
+.staff svg { width: 100%; height: 100%; overflow: visible; }
+.staff__clef {
+  stroke: var(--p-accent);
+  fill: var(--p-accent);
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  transform: perspective(400px) rotateY(calc((1 - min(1, var(--e, 1) * 2)) * 360deg));
+}
+.staff__line {
+  stroke: currentColor;
+  stroke-opacity: 0.28;
+  stroke-width: 1.2;
+  transform-box: fill-box;
+  transform-origin: 0 50%;
+  transform: scaleX(clamp(0, calc((var(--e, 1) - 0.35 - var(--i) * 0.05) * 3), 1));
+}
+.staff__tab { font: 700 17px var(--font-text); fill: var(--p-accent); stroke: none; text-anchor: middle; }
+.staff__note { opacity: 0.28; transition: opacity 0.4s, transform 0.5s cubic-bezier(0.3, 1.5, 0.5, 1); transform: translateY(-10px); }
+.staff__note.is-on { opacity: 1; transform: translateY(0); }
+.staff__fretbg { fill: var(--p-bg); stroke: none; }
+.staff__fret { font: 600 15px var(--font-text); fill: var(--p-ink); stroke: none; text-anchor: middle; }
+.staff__note.is-on .staff__fret { fill: var(--p-accent); }
+.staff__num { font: 500 12px var(--font-text); fill: var(--p-muted); stroke: none; text-anchor: middle; }
+@media (max-width: 1023px) { .staff { display: none; } }
+
+/* ---------------------------------------------------------------- 3. equalizador */
+#festivais { position: relative; overflow: hidden; }
+#festivais > .wrap { position: relative; z-index: 1; }
+.eq {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------- 4. vinil */
+.has-vinyl { position: relative; }
+.has-vinyl > :not(.vinyl) { position: relative; z-index: 1; }
+.vinyl {
+  position: absolute;
+  z-index: 0;
+  width: min(520px, 90%);
+  aspect-ratio: 1;
+  left: -30%;
+  top: 58%;
+  translate: 0 -50%;
+  pointer-events: none;
+  transform: scale(calc(0.25 + 0.75 * var(--e, 1)));
+  opacity: calc(0.2 + 0.8 * var(--e, 1));
+}
+.vinyl svg { width: 100%; height: 100%; overflow: visible; }
+.vinyl__disc { transform-origin: 0 0; }
+.vinyl__body { fill: color-mix(in srgb, var(--p-surface) 92%, transparent); }
+.vinyl__groove { fill: none; stroke: var(--p-ink); stroke-opacity: 0.06; stroke-width: 0.5; }
+.vinyl__label { fill: var(--p-accent); fill-opacity: 0.16; }
+.vinyl__pick { fill: var(--p-accent); fill-opacity: 0.22; }
+.vinyl__hole { fill: var(--p-ink); fill-opacity: 0.5; }
+.vinyl__needle { stroke: var(--p-accent); stroke-width: 1.6; fill: var(--p-accent); transform-origin: 92px -92px; transition: transform 0.6s cubic-bezier(0.3, 1.2, 0.4, 1); opacity: 0.45; }
+.vinyl__needle.is-on { opacity: 1; }
+#professores .rows li { cursor: default; }
+#professores { overflow: hidden; }
+
+/* ---------------------------------------------------------------- 5. rosácea */
+.rosette-host { position: relative; display: flex; align-items: center; gap: 0.35em; font: var(--display-weight) clamp(32px, 3.6vw, 52px)/1.05 var(--font-display); margin-bottom: var(--s-6); }
+.rosette-host > .type-moment { margin: 0; }
+.rosette-host > .rosette.knob { position: relative; left: auto; top: auto; translate: none; flex: none; width: 1.5em; }
+.rosette-host > .type-moment { position: relative; z-index: 1; }
+.rosette {
+  position: absolute;
+  z-index: 0;
+  width: 2.4em;
+  aspect-ratio: 1;
+  left: 0;
+  top: 0.55em;
+  translate: 0 -50%;
+  pointer-events: none;
+  font: var(--display-weight) clamp(32px, 3.6vw, 52px)/1.05 var(--font-display);
+  transform: rotate(calc((1 - var(--e, 1)) * 360deg)) scale(calc(0.3 + 0.7 * var(--e, 1)));
+}
+.rosette svg { width: 100%; height: 100%; overflow: visible; }
+.rosette__rings circle { fill: none; stroke: var(--p-accent); transform-origin: 0 0; }
+.rosette__r1 { stroke-width: 1.4; stroke-opacity: 0.7; }
+.rosette__r2 { stroke-width: 6; stroke-dasharray: 2 3; stroke-opacity: 0.55; animation: rosette 40s linear infinite; }
+.rosette__r3 { stroke-width: 3; stroke-dasharray: 9 4 2 4; stroke-opacity: 0.6; animation: rosette 28s linear infinite reverse; }
+.rosette__r4 { stroke-width: 1; stroke-opacity: 0.6; }
+.rosette.is-spinning .rosette__rings { animation: rosette-once 0.9s cubic-bezier(0.3, 0.7, 0.2, 1); }
+@keyframes rosette { to { transform: rotate(360deg); } }
+@keyframes rosette-once { to { transform: rotate(360deg); } }
+.rosette__rings { transform-origin: 0 0; }
+
+/* ---------------------------------------------------------------- 6. metrônomo */
+.metro { position: relative; height: 140px; width: 100%; margin-bottom: var(--s-4); transition: height 0.8s cubic-bezier(0.3, 0.7, 0.2, 1); }
+.metro__rod {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 3px;
+  height: 130px;
+  border-radius: 3px;
+  background: var(--p-accent);
+  transform-origin: 50% 100%;
+  transform: rotate(var(--a, 0deg));
+  transition: transform 0.9s cubic-bezier(0.3, 0.7, 0.2, 1), height 0.9s cubic-bezier(0.3, 0.7, 0.2, 1) 0.4s, left 0.9s cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.metro__weight { position: absolute; left: 50%; top: 28%; width: 14px; height: 18px; translate: -50% 0; border-radius: 3px; background: var(--p-ink); transition: opacity 0.4s; }
+.metro.is-settled { height: 6px; }
+/* deita: gira 90° a partir da base e se estende até a largura do botão */
+.metro.is-settled .metro__rod { left: 1.5px; height: var(--len, 100%); transform: rotate(90deg); }
+.metro.is-settled .metro__weight { opacity: 0; }
+.metro__beat { position: absolute; left: 0; bottom: -4px; width: 11px; height: 11px; border-radius: 50%; background: var(--p-accent); opacity: 0; }
+.metro.is-beating .metro__beat { animation: beat 2s steps(1, end); }
+.metro.is-beating .metro__rod { animation: beat-line 2s ease-out; }
+@keyframes beat {
+  0% { opacity: 1; left: 0; }
+  25% { opacity: 1; left: 33%; }
+  50% { opacity: 1; left: 66%; }
+  75% { opacity: 1; left: calc(100% - 11px); }
+  100% { opacity: 0; left: calc(100% - 11px); }
+}
+@keyframes beat-line {
+  0%, 25%, 50%, 75% { filter: brightness(1.25); }
+  12%, 37%, 62%, 100% { filter: none; }
+}
+
+/* ---------------------------------------------------------------- movimento reduzido: estado final, sem animação */
+.forms-still .pick-mask { -webkit-mask: none; mask: none; transform: none; }
+.forms-still .staff__clef, .forms-still .staff__line, .forms-still .eq, .forms-still .vinyl, .forms-still .rosette { transform: none !important; }
+.forms-still .rosette__r2, .forms-still .rosette__r3 { animation: none; }
+
+/* ---------------------------------------------------------------- 5b. knob do amplificador (0 a 11) */
+.rosette.knob { transform: scale(calc(0.3 + 0.7 * var(--e, 1))); }
+.knob__tick { stroke: var(--p-ink); stroke-opacity: 0.35; stroke-width: 2; }
+.knob__tick.is-max, .knob__n.is-max { stroke: var(--p-accent); fill: var(--p-accent); stroke-opacity: 1; }
+.knob__n { font: 600 11px var(--font-text); fill: var(--p-muted); text-anchor: middle; }
+.knob__dial { transform: rotate(calc(-150deg + 300deg * var(--e, 1))); transform-origin: 0 0; transition: transform 0.2s; }
+.knob__body { fill: var(--p-ink); }
+.knob__cap { fill: none; stroke: var(--p-accent); stroke-opacity: 0.5; stroke-width: 1.5; stroke-dasharray: 2 4; }
+.knob__pointer { stroke: var(--p-accent); stroke-width: 5; stroke-linecap: round; }
+.rosette.knob.is-spinning .knob__dial { animation: knob-11 1s cubic-bezier(0.3, 0.7, 0.2, 1); }
+@keyframes knob-11 { from { transform: rotate(-150deg); } to { transform: rotate(150deg); } }
+.rosette.knob { width: 2.2em; opacity: 0.9; }
+.rosette-host > .type-moment { padding-left: 0; }
+
+
+/* ---------------------------------------------------------------- 6b. baqueta e contagem 1-2-3-4 */
+.metro__rod {
+  width: 7px !important;
+  border-radius: 4px 4px 3px 3px;
+  background: linear-gradient(90deg, #b88a4f, #e7c690 45%, #a8783f);
+}
+.metro__weight { top: -9px !important; width: 11px !important; height: 15px !important; border-radius: 50% !important; background: #e7c690 !important; }
+.metro.is-settled .metro__rod { height: var(--len, 100%); }
+.metro__count { position: absolute; right: 0; bottom: 14px; display: flex; gap: 14px; font: 600 15px var(--font-text); color: var(--p-accent); }
+.metro__count b { opacity: 0; transform: translateY(6px); }
+.metro.is-beating .metro__count b { animation: count 1.6s ease-out both; }
+.metro.is-beating .metro__count b:nth-child(2) { animation-delay: 0.4s; }
+.metro.is-beating .metro__count b:nth-child(3) { animation-delay: 0.8s; }
+.metro.is-beating .metro__count b:nth-child(4) { animation-delay: 1.2s; }
+@keyframes count { 0% { opacity: 0; transform: translateY(6px); } 15% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
