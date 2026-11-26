@@ -13,6 +13,7 @@ export interface Profile {
   phone: string | null;
   avatar_url: string | null;
   bio: string | null;
+  nickname: string | null;
   role: Role;
   color: string;
   active: boolean;

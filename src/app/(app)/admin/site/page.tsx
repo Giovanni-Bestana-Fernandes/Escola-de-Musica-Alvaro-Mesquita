@@ -43,9 +43,18 @@ export default async function SiteAdminPage({ searchParams }: { searchParams: Pr
           </div>
           <div className="sm:col-span-2">
             <label className="label">Endereço da nova sede</label>
-            <input name="address" defaultValue={s.address ?? ""} className="input" placeholder="Rua das Flores, Centro, Cidade" />
+            <input name="address" defaultValue={s.address ?? ""} className="input" placeholder="R. Joaquim Franco Silva, 80 - Vila Hab., Barra Bonita - SP, 17340-000" />
             <p className="mt-1 text-xs text-muted">
-              Rua e bairro. O site mostra o endereço em destaque e um link &quot;Ver o caminho no mapa&quot;.
+              Escreva como no Google Maps: rua e número, bairro, cidade e UF, CEP (separados por &quot; - &quot;). O site mostra
+              a rua em destaque, o endereço completo, o mapa com o pin e o botão &quot;Abrir no Google Maps&quot;.
+            </p>
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Link do mapa (opcional)</label>
+            <input name="maps_embed_url" defaultValue={s.maps_embed_url ?? ""} className="input" placeholder='<iframe src="https://www.google.com/maps/embed?pb=..."' />
+            <p className="mt-1 text-xs text-muted">
+              Deixe em branco para o mapa achar o endereço sozinho. Se o pin cair no lugar errado, abra a sede no Google
+              Maps, clique em Compartilhar → Incorporar um mapa → Copiar HTML e cole aqui.
             </p>
           </div>
           <div>

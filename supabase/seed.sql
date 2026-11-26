@@ -15,7 +15,7 @@ values (
   1,
   'Espaço Musical Álvaro Mesquita',
   'Formando músicos para a vida.',
-  'Rua Exemplo, Centro',
+  'R. Joaquim Franco Silva, 80 - Vila Hab., Barra Bonita - SP, 17340-000',
   null,
   '5514996436839',
   'escolaalvaromesquita',

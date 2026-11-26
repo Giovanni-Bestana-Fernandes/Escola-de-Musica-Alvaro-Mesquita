@@ -33,8 +33,8 @@ const service = createClient(URL, SERVICE, { auth: { persistSession: false } });
 const anon = createClient(URL, ANON, { auth: { persistSession: false } });
 
 const alvaro = await login(ADMIN_EMAIL, ADMIN_PASS);
-const ana = await login("ana@demo.com");
-const bruno = await login("bruno@demo.com");
+const camila = await login("camila@demo.com");
+const lucas = await login("lucas@demo.com");
 const carla = await login("carla@demo.com");
 const diego = await login("diego@demo.com");
 
@@ -58,15 +58,15 @@ console.log("\nVisitante (sem login)");
 }
 
 console.log("\nAluna Carla");
-let carlaAnaLesson;
+let carlaCamilaLesson;
 {
   const { data: mine } = await carla.c.from("lessons").select("*");
   check("vê só as próprias aulas", mine.length > 0 && mine.every((l) => l.student_id === carla.id), `(${mine.length})`);
   const { data: dl } = await carla.c.from("lessons").select("id").eq("student_id", diego.id);
   check("NÃO vê aulas do Diego", dl.length === 0);
 
-  carlaAnaLesson = mine.find((l) => l.teacher_id === ana.id);
-  const { data: upd } = await carla.c.from("lessons").update({ status: "canceled" }).eq("id", carlaAnaLesson.id).select();
+  carlaCamilaLesson = mine.find((l) => l.teacher_id === camila.id);
+  const { data: upd } = await carla.c.from("lessons").update({ status: "canceled" }).eq("id", carlaCamilaLesson.id).select();
   check("NÃO altera aula diretamente", (upd?.length ?? 0) === 0);
 
   const { error: roleErr } = await carla.c.from("profiles").update({ role: "admin" }).eq("id", carla.id);
@@ -80,9 +80,9 @@ let carlaAnaLesson;
   check("NÃO vê permissões dos professores", perms.length === 0);
 }
 
-console.log("\nPedido de remarcação (Carla → Ana)");
+console.log("\nPedido de remarcação (Carla → Camila)");
 let requestId;
-const proposed = new Date(Date.parse(carlaAnaLesson.starts_at) + 26 * 3600e3).toISOString(); // dia seguinte, +2h
+const proposed = new Date(Date.parse(carlaCamilaLesson.starts_at) + 26 * 3600e3).toISOString(); // dia seguinte, +2h
 {
   const { data: diegoLesson } = await service.from("lessons").select("id").eq("student_id", diego.id).limit(1).single();
   const { error: e1 } = await carla.c
@@ -92,91 +92,91 @@ const proposed = new Date(Date.parse(carlaAnaLesson.starts_at) + 26 * 3600e3).to
 
   const { data: req, error: e2 } = await carla.c
     .from("lesson_change_requests")
-    .insert({ lesson_id: carlaAnaLesson.id, requested_by: carla.id, type: "reschedule", proposed_starts_at: proposed, reason: "prova" })
+    .insert({ lesson_id: carlaCamilaLesson.id, requested_by: carla.id, type: "reschedule", proposed_starts_at: proposed, reason: "prova" })
     .select()
     .single();
   check("pede remarcação da própria aula", !e2, e2?.message);
   requestId = req?.id;
 
-  const { data: bReq } = await bruno.c.from("lesson_change_requests").select("id").eq("id", requestId);
-  check("Bruno (outro prof.) NÃO vê o pedido", bReq.length === 0);
-  const { error: bDecide } = await bruno.c.rpc("decide_change_request", { p_request: requestId, p_approve: true });
-  check("Bruno NÃO pode aprovar", !!bDecide);
+  const { data: bReq } = await lucas.c.from("lesson_change_requests").select("id").eq("id", requestId);
+  check("Lucas (outro prof.) NÃO vê o pedido", bReq.length === 0);
+  const { error: bDecide } = await lucas.c.rpc("decide_change_request", { p_request: requestId, p_approve: true });
+  check("Lucas NÃO pode aprovar", !!bDecide);
   const { error: cDecide } = await carla.c.rpc("decide_change_request", { p_request: requestId, p_approve: true });
   check("Carla NÃO pode aprovar o próprio pedido", !!cDecide);
 
-  const { data: aReq } = await ana.c.from("lesson_change_requests").select("id").eq("id", requestId);
-  check("Ana (professora da aula) vê o pedido", aReq.length === 1);
-  const { error: aDecide } = await ana.c.rpc("decide_change_request", { p_request: requestId, p_approve: true, p_response: "ok!" });
-  check("Ana aprova", !aDecide, aDecide?.message);
-  const { data: les } = await service.from("lessons").select("starts_at, status").eq("id", carlaAnaLesson.id).single();
+  const { data: aReq } = await camila.c.from("lesson_change_requests").select("id").eq("id", requestId);
+  check("Camila (professora da aula) vê o pedido", aReq.length === 1);
+  const { error: aDecide } = await camila.c.rpc("decide_change_request", { p_request: requestId, p_approve: true, p_response: "ok!" });
+  check("Camila aprova", !aDecide, aDecide?.message);
+  const { data: les } = await service.from("lessons").select("starts_at, status").eq("id", carlaCamilaLesson.id).single();
   check("aula foi remarcada", Date.parse(les.starts_at) === Date.parse(proposed) && les.status === "rescheduled", JSON.stringify(les));
-  const { error: again } = await ana.c.rpc("decide_change_request", { p_request: requestId, p_approve: false });
+  const { error: again } = await camila.c.rpc("decide_change_request", { p_request: requestId, p_approve: false });
   check("pedido não pode ser respondido duas vezes", !!again);
 }
 
 console.log("\nConflito de horário");
 {
-  const { data: anaLessons } = await service.from("lessons").select("*").eq("teacher_id", ana.id).neq("status", "canceled").order("starts_at").limit(2);
+  const { data: anaLessons } = await service.from("lessons").select("*").eq("teacher_id", camila.id).neq("status", "canceled").order("starts_at").limit(2);
   const [a, b] = anaLessons;
-  const { data: conflict } = await ana.c.rpc("lesson_conflict", { p_teacher: ana.id, p_starts: a.starts_at, p_ends: a.ends_at, p_ignore: b.id });
+  const { data: conflict } = await camila.c.rpc("lesson_conflict", { p_teacher: camila.id, p_starts: a.starts_at, p_ends: a.ends_at, p_ignore: b.id });
   check("detecta conflito no mesmo horário", conflict === true);
-  const { data: free } = await ana.c.rpc("lesson_conflict", { p_teacher: ana.id, p_starts: "2001-01-01T10:00:00Z", p_ends: "2001-01-01T11:00:00Z" });
+  const { data: free } = await camila.c.rpc("lesson_conflict", { p_teacher: camila.id, p_starts: "2001-01-01T10:00:00Z", p_ends: "2001-01-01T11:00:00Z" });
   check("horário livre não tem conflito", free === false);
   // Pedido de remarcação para horário ocupado deve falhar na aprovação
   const { data: r } = await carla.c
     .from("lesson_change_requests")
-    .insert({ lesson_id: carlaAnaLesson.id, requested_by: carla.id, type: "reschedule", proposed_starts_at: (a.id === carlaAnaLesson.id ? b : a).starts_at })
+    .insert({ lesson_id: carlaCamilaLesson.id, requested_by: carla.id, type: "reschedule", proposed_starts_at: (a.id === carlaCamilaLesson.id ? b : a).starts_at })
     .select()
     .single();
-  const { error } = await ana.c.rpc("decide_change_request", { p_request: r.id, p_approve: true });
+  const { error } = await camila.c.rpc("decide_change_request", { p_request: r.id, p_approve: true });
   check("aprovação para horário ocupado é bloqueada", !!error && /horário/.test(error.message), error?.message);
-  await ana.c.rpc("decide_change_request", { p_request: r.id, p_approve: false });
+  await camila.c.rpc("decide_change_request", { p_request: r.id, p_approve: false });
 }
 
 console.log("\nProfessores e Álvaro");
 {
-  const { data: bl } = await bruno.c.from("lessons").select("teacher_id");
-  check("Bruno vê só as próprias aulas", bl.length > 0 && bl.every((l) => l.teacher_id === bruno.id));
-  const { data: bStudents } = await bruno.c.from("profiles").select("id").eq("role", "student");
-  check("Bruno vê só os próprios alunos", bStudents.length === 1 && bStudents[0].id === diego.id, `(${bStudents.length})`);
+  const { data: bl } = await lucas.c.from("lessons").select("teacher_id");
+  check("Lucas vê só as próprias aulas", bl.length > 0 && bl.every((l) => l.teacher_id === lucas.id));
+  const { data: bStudents } = await lucas.c.from("profiles").select("id").eq("role", "student");
+  check("Lucas vê só os próprios alunos", bStudents.length === 1 && bStudents[0].id === diego.id, `(${bStudents.length})`);
   const { data: al } = await alvaro.c.from("lessons").select("id");
   check("Álvaro vê TODAS as aulas", al.length === totalLessons, `(${al.length}/${totalLessons})`);
   const { data: alMine } = await alvaro.c.from("lessons").select("id").eq("teacher_id", alvaro.id);
   check("Álvaro também tem as próprias aulas (é professor)", alMine.length > 0);
 
-  const { data: bUpd } = await bruno.c.from("lessons").update({ notes: "x" }).eq("teacher_id", ana.id).select();
-  check("Bruno NÃO altera aulas da Ana", (bUpd?.length ?? 0) === 0);
+  const { data: bUpd } = await lucas.c.from("lessons").update({ notes: "x" }).eq("teacher_id", camila.id).select();
+  check("Lucas NÃO altera aulas da Camila", (bUpd?.length ?? 0) === 0);
 
-  const { data: pUpd } = await ana.c.from("teacher_permissions").update({ view_all_calendars: true }).eq("teacher_id", ana.id).select();
-  check("Ana NÃO muda as próprias permissões", (pUpd?.length ?? 0) === 0);
+  const { data: pUpd } = await camila.c.from("teacher_permissions").update({ view_all_calendars: true }).eq("teacher_id", camila.id).select();
+  check("Camila NÃO muda as próprias permissões", (pUpd?.length ?? 0) === 0);
 }
 
-console.log("\nPermissão 'Calendário geral' (Álvaro liga para o Bruno)");
+console.log("\nPermissão 'Calendário geral' (Álvaro liga para o Lucas)");
 {
-  await alvaro.c.from("teacher_permissions").update({ view_all_calendars: true }).eq("teacher_id", bruno.id);
-  const { data: bl } = await bruno.c.from("lessons").select("id");
-  check("Bruno passa a ver todas as aulas", bl.length === totalLessons, `(${bl.length}/${totalLessons})`);
-  const { data: bUpd } = await bruno.c.from("lessons").update({ notes: "x" }).eq("teacher_id", ana.id).select();
-  check("...mas continua sem alterar aulas da Ana", (bUpd?.length ?? 0) === 0);
-  await alvaro.c.from("teacher_permissions").update({ view_all_calendars: false }).eq("teacher_id", bruno.id);
-  const { data: bl2 } = await bruno.c.from("lessons").select("teacher_id");
-  check("desligando, volta a ver só as próprias", bl2.every((l) => l.teacher_id === bruno.id));
+  await alvaro.c.from("teacher_permissions").update({ view_all_calendars: true }).eq("teacher_id", lucas.id);
+  const { data: bl } = await lucas.c.from("lessons").select("id");
+  check("Lucas passa a ver todas as aulas", bl.length === totalLessons, `(${bl.length}/${totalLessons})`);
+  const { data: bUpd } = await lucas.c.from("lessons").update({ notes: "x" }).eq("teacher_id", camila.id).select();
+  check("...mas continua sem alterar aulas da Camila", (bUpd?.length ?? 0) === 0);
+  await alvaro.c.from("teacher_permissions").update({ view_all_calendars: false }).eq("teacher_id", lucas.id);
+  const { data: bl2 } = await lucas.c.from("lessons").select("teacher_id");
+  check("desligando, volta a ver só as próprias", bl2.every((l) => l.teacher_id === lucas.id));
 }
 
 console.log("\nFestivais");
 {
   const { error: cErr } = await carla.c.from("festivals").insert({ title: "x", date: "2026-01-01" });
   check("aluna NÃO cria festival", !!cErr);
-  const { error: bErr } = await bruno.c.from("festivals").insert({ title: "x", date: "2026-01-01" });
-  check("Bruno (sem permissão) NÃO cria festival", !!bErr);
-  const { data: f, error: aErr } = await ana.c.from("festivals").insert({ title: "Teste RLS", date: "2026-01-01" }).select().single();
-  check("Ana (com permissão Festivais) cria festival", !aErr, aErr?.message);
+  const { error: bErr } = await lucas.c.from("festivals").insert({ title: "x", date: "2026-01-01" });
+  check("Lucas (sem permissão) NÃO cria festival", !!bErr);
+  const { data: f, error: aErr } = await camila.c.from("festivals").insert({ title: "Teste RLS", date: "2026-01-01" }).select().single();
+  check("Camila (com permissão Festivais) cria festival", !aErr, aErr?.message);
 
   const png = new Blob([new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])], { type: "image/png" });
   const path = `${f.id}/teste.png`;
-  const { error: upA } = await ana.c.storage.from("festival-photos").upload(path, png, { contentType: "image/png" });
-  check("Ana envia foto", !upA, upA?.message);
+  const { error: upA } = await camila.c.storage.from("festival-photos").upload(path, png, { contentType: "image/png" });
+  check("Camila envia foto", !upA, upA?.message);
   const { error: upC } = await carla.c.storage.from("festival-photos").upload(`${f.id}/hack.png`, png, { contentType: "image/png" });
   check("aluna NÃO envia foto", !!upC);
   const { data: signed, error: sErr } = await carla.c.storage.from("festival-photos").createSignedUrl(path, 60);
@@ -184,10 +184,10 @@ console.log("\nFestivais");
   const { error: anonErr } = await anon.storage.from("festival-photos").createSignedUrl(path, 60);
   check("visitante NÃO acessa fotos dos festivais", !!anonErr);
 
-  await alvaro.c.from("teacher_permissions").update({ manage_festivals: false }).eq("teacher_id", ana.id);
-  const { error: offErr } = await ana.c.from("festivals").insert({ title: "y", date: "2026-01-01" });
-  check("Álvaro desliga a permissão → Ana não cria mais", !!offErr);
-  await alvaro.c.from("teacher_permissions").update({ manage_festivals: true }).eq("teacher_id", ana.id);
+  await alvaro.c.from("teacher_permissions").update({ manage_festivals: false }).eq("teacher_id", camila.id);
+  const { error: offErr } = await camila.c.from("festivals").insert({ title: "y", date: "2026-01-01" });
+  check("Álvaro desliga a permissão → Camila não cria mais", !!offErr);
+  await alvaro.c.from("teacher_permissions").update({ manage_festivals: true }).eq("teacher_id", camila.id);
 
   await service.storage.from("festival-photos").remove([path]);
   await service.from("festivals").delete().eq("id", f.id);
@@ -195,12 +195,12 @@ console.log("\nFestivais");
 
 console.log("\nChat, arquivos e tempo real");
 {
-  const { data: conv } = await carla.c.from("conversations").select("*").eq("teacher_id", ana.id).single();
+  const { data: conv } = await carla.c.from("conversations").select("*").eq("teacher_id", camila.id).single();
   const { data: diegoConv } = await service.from("conversations").select("*").eq("student_id", diego.id).single();
   const { data: carlaConvs } = await carla.c.from("conversations").select("id");
   check("Carla vê só as próprias conversas", carlaConvs.length === 2, `(${carlaConvs.length})`);
 
-  // Realtime: Carla escuta, Ana envia
+  // Realtime: Carla escuta, Camila envia
   const received = [];
   const diegoReceived = [];
   const ch = carla.c
@@ -217,8 +217,8 @@ console.log("\nChat, arquivos e tempo real");
   ]);
   await new Promise((r) => setTimeout(r, 1500));
 
-  const { error: mErr } = await ana.c.from("messages").insert({ conversation_id: conv.id, sender_id: ana.id, body: "Oi Carla! Link: https://meet.google.com/abc" });
-  check("Ana envia mensagem", !mErr, mErr?.message);
+  const { error: mErr } = await camila.c.from("messages").insert({ conversation_id: conv.id, sender_id: camila.id, body: "Oi Carla! Link: https://meet.google.com/abc" });
+  check("Camila envia mensagem", !mErr, mErr?.message);
   for (let i = 0; i < 20 && received.length === 0; i++) await new Promise((r) => setTimeout(r, 250));
   check("Carla recebe em tempo real", received.length === 1);
   check("Diego NÃO recebe mensagens da conversa da Carla", diegoReceived.length === 0);
@@ -227,7 +227,7 @@ console.log("\nChat, arquivos e tempo real");
 
   const { data: dMsgs } = await diego.c.from("messages").select("id").eq("conversation_id", conv.id);
   check("Diego NÃO lê a conversa da Carla", dMsgs.length === 0);
-  const { error: fake } = await carla.c.from("messages").insert({ conversation_id: conv.id, sender_id: ana.id, body: "fingindo ser a Ana" });
+  const { error: fake } = await carla.c.from("messages").insert({ conversation_id: conv.id, sender_id: camila.id, body: "fingindo ser a Camila" });
   check("NÃO envia mensagem em nome de outra pessoa", !!fake);
   const { error: intrude } = await carla.c.from("messages").insert({ conversation_id: diegoConv.id, sender_id: carla.id, body: "oi" });
   check("NÃO envia mensagem em conversa alheia", !!intrude);
@@ -239,8 +239,8 @@ console.log("\nChat, arquivos e tempo real");
   const fpath = `${conv.id}/${Date.now()}-partitura.txt`;
   const { error: uErr } = await carla.c.storage.from("chat-files").upload(fpath, file, { contentType: "text/plain" });
   check("Carla envia arquivo no chat", !uErr, uErr?.message);
-  const { data: dl, error: dlErr } = await ana.c.storage.from("chat-files").download(fpath);
-  check("Ana baixa o arquivo", !dlErr && (await dl.text()) === "partitura de teste", dlErr?.message);
+  const { data: dl, error: dlErr } = await camila.c.storage.from("chat-files").download(fpath);
+  check("Camila baixa o arquivo", !dlErr && (await dl.text()) === "partitura de teste", dlErr?.message);
   const { error: dDl } = await diego.c.storage.from("chat-files").download(fpath);
   check("Diego NÃO baixa o arquivo", !!dDl);
   const { error: dUp } = await diego.c.storage.from("chat-files").upload(`${conv.id}/intruso.txt`, file);

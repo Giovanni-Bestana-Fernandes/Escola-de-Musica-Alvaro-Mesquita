@@ -64,8 +64,14 @@ export default async function PerfilPage({ searchParams }: { searchParams: Promi
           {user.isTeacher && (
             <>
               <div>
+                <label className="label">Nome no site (opcional)</label>
+                <input name="nickname" defaultValue={user.nickname ?? ""} className="input" placeholder="Ex.: Alvarinho" />
+                <p className="help">Como você aparece no cartão da equipe, na página inicial. Em branco, usa o seu primeiro nome.</p>
+              </div>
+              <div>
                 <label className="label">Sobre mim (aparece no site)</label>
                 <textarea name="bio" rows={3} defaultValue={user.bio ?? ""} className="input" />
+                <p className="help">Uma ou duas frases no cartão da equipe. As aulas que você dá aparecem sozinhas, pelos instrumentos cadastrados.</p>
               </div>
               <div className="flex items-center gap-3">
                 <label className="label mb-0">Minha cor no calendário</label>

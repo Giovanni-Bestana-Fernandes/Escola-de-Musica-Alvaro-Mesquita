@@ -52,26 +52,25 @@ const alvaroId = await ensureUser({
 });
 await db
   .from("profiles")
-  .update({ bio: "Fundador da escola, guitarrista e professor há mais de 20 anos." })
+  .update({ nickname: "Alvarinho", bio: "Fundador da escola e responsável pelo Projeto de Bandas." })
   .eq("id", alvaroId);
-await db.from("teacher_instruments").upsert(
-  [inst.guitarra, inst.violao].map((instrument_id) => ({ teacher_id: alvaroId, instrument_id })),
-);
+// a equipe do cartaz "Conheça a nossa equipe": Alvarinho e Lucas dão guitarra, violão, contrabaixo, canto e
+// ukulele; Camila dá teclado
+const CORDAS = [inst.guitarra, inst.violao, inst.baixo, inst.canto, inst.ukulele];
+await db.from("teacher_instruments").upsert(CORDAS.map((instrument_id) => ({ teacher_id: alvaroId, instrument_id })));
 
 if (demo) {
   const pass = "senha123";
-  const ana = await ensureUser({ email: "ana@demo.com", password: pass, full_name: "Ana Souza", role: "teacher", color: "#db2777" });
-  const bruno = await ensureUser({ email: "bruno@demo.com", password: pass, full_name: "Bruno Lima", role: "teacher", color: "#0891b2" });
+  const camila = await ensureUser({ email: "camila@demo.com", password: pass, full_name: "Camila", role: "teacher", color: "#db2777" });
+  const lucas = await ensureUser({ email: "lucas@demo.com", password: pass, full_name: "Lucas", role: "teacher", color: "#0891b2" });
   const carla = await ensureUser({ email: "carla@demo.com", password: pass, full_name: "Carla Alves", role: "student" });
   const diego = await ensureUser({ email: "diego@demo.com", password: pass, full_name: "Diego Rocha", role: "student" });
 
   await db.from("teacher_instruments").upsert([
-    { teacher_id: ana, instrument_id: inst.canto },
-    { teacher_id: ana, instrument_id: inst.teclado },
-    { teacher_id: bruno, instrument_id: inst.baixo },
-    { teacher_id: bruno, instrument_id: inst.ukulele },
+    { teacher_id: camila, instrument_id: inst.teclado },
+    ...CORDAS.map((instrument_id) => ({ teacher_id: lucas, instrument_id })),
   ]);
-  await db.from("teacher_permissions").update({ manage_festivals: true }).eq("teacher_id", ana);
+  await db.from("teacher_permissions").update({ manage_festivals: true }).eq("teacher_id", camila);
 
   const { count } = await db.from("enrollments").select("*", { count: "exact", head: true });
   if (!count) {
@@ -79,8 +78,8 @@ if (demo) {
       .from("enrollments")
       .insert([
         { student_id: carla, teacher_id: alvaroId, instrument_id: inst.guitarra, mode: "presencial" },
-        { student_id: carla, teacher_id: ana, instrument_id: inst.canto, mode: "online" },
-        { student_id: diego, teacher_id: bruno, instrument_id: inst.baixo, mode: "presencial" },
+        { student_id: carla, teacher_id: camila, instrument_id: inst.teclado, mode: "online" },
+        { student_id: diego, teacher_id: lucas, instrument_id: inst.baixo, mode: "presencial" },
       ])
       .select();
     if (error) throw error;
@@ -124,6 +123,6 @@ if (demo) {
     });
   }
   console.log("\nLogins de demonstração (senha: senha123):");
-  console.log("  admin:  alvaro@demo.com (ou ADMIN_EMAIL)\n  prof.:  ana@demo.com, bruno@demo.com\n  alunos: carla@demo.com, diego@demo.com");
+  console.log("  admin:  alvaro@demo.com (ou ADMIN_EMAIL)\n  prof.:  camila@demo.com, lucas@demo.com\n  alunos: carla@demo.com, diego@demo.com");
 }
 console.log("\nPronto!");

@@ -15,6 +15,7 @@ export async function updateSettings(form: FormData) {
     school_name: str(form, "school_name") || "Espaço Musical Álvaro Mesquita",
     tagline: str(form, "tagline") || null,
     address: str(form, "address") || null,
+    maps_embed_url: str(form, "maps_embed_url").match(/src="([^"]+)"/)?.[1] ?? (str(form, "maps_embed_url") || null),
     whatsapp: str(form, "whatsapp").replace(/\D/g, "") || null,
     instagram: str(form, "instagram").replace(/^@/, "") || null,
     email: str(form, "email") || null,

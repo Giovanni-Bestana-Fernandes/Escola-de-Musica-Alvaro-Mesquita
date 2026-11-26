@@ -4,6 +4,7 @@
  */
 import { createClient } from "@supabase/supabase-js";
 import { ENROLL_VIDEO_POST, whatsappLink } from "@/lib/whatsapp";
+import { ADDRESS_DEFAULT, mapsLink, parseAddress } from "@/lib/address";
 
 export const dynamic = "force-dynamic";
 
@@ -13,15 +14,18 @@ const MARK = `<svg viewBox="0 0 100 110" width="34" height="37" aria-hidden="tru
 
 export async function GET() {
   let phone: string | null = null;
+  let address: string | null = ADDRESS_DEFAULT;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (url && key) {
     const db = createClient(url, key, { auth: { persistSession: false } });
-    const { data } = await db.from("site_settings").select("whatsapp").eq("id", 1).maybeSingle();
+    const { data } = await db.from("site_settings").select("whatsapp, address").eq("id", 1).maybeSingle();
     phone = data?.whatsapp ?? null;
+    if (data) address = data.address;
   }
   const wa = whatsappLink(phone);
   const embed = `${ENROLL_VIDEO_POST}embed/`;
+  const place = parseAddress(address);
 
   const html = `<!doctype html>
 <html lang="pt-BR">
@@ -55,6 +59,10 @@ export async function GET() {
   .cta:hover{background:#d6a33b;transform:translateY(-1px)} .cta:active{transform:scale(.98)}
   .cta:focus-visible,.back:focus-visible,.alt:focus-visible{outline:2px solid #c8952e;outline-offset:3px}
   .note{font-size:14px;color:#f6f1e699;margin:14px 0 0}
+  .where{display:flex;gap:10px;align-items:flex-start;margin:22px 0 0;padding-top:18px;border-top:1px solid #f6f1e626;font-size:15px;font-style:normal;color:#f6f1e6d9}
+  .where svg{flex:none;margin-top:3px;color:#c8952e}
+  .where a{color:#f6f1e6;text-underline-offset:3px}
+  .where a:focus-visible{outline:2px solid #c8952e;outline-offset:3px}
   .video{background:#0f0d0b;border:1px solid #f6f1e626;border-radius:20px;overflow:hidden;box-shadow:0 30px 80px -40px #000}
   .video iframe{display:block;width:100%;height:min(760px,78svh);border:0;background:#fff}
   .alt{display:block;text-align:center;font-size:14px;color:#f6f1e6b3;padding:12px}
@@ -81,6 +89,7 @@ export async function GET() {
     <a class="cta" href="${esc(wa)}">Continuar para o WhatsApp
       <svg width="14" height="14" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6h8M4.5 2.5 8 6l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <p class="note">Poucos horários disponíveis. A mensagem já vai pronta, pedindo a tabela de horários e valores.</p>
+    ${place ? `<address class="where"><svg width="16" height="20" viewBox="0 0 16 20" aria-hidden="true"><path d="M8 19s6-6.2 6-11A6 6 0 0 0 2 8c0 4.8 6 11 6 11Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="8" cy="8" r="2.2" fill="currentColor"/></svg><span>Aulas presenciais na sede: <a href="${esc(mapsLink(place))}" target="_blank" rel="noopener">${esc(place.full)}</a></span></address>` : ""}
   </div>
   <div class="video">
     <iframe src="${esc(embed)}" title="Vídeo do Espaço Musical Álvaro Mesquita no Instagram" loading="eager" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; clipboard-write"></iframe>

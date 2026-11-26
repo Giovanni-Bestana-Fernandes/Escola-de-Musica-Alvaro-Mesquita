@@ -11,23 +11,31 @@ main > .section:not(.ground-inverse) { background: var(--p-bg); }
 .frame--photo, .develop, .split-photo { box-shadow: 0 18px 50px -28px rgba(27, 23, 18, 0.45); }
 :focus-visible { outline: 2px solid var(--p-accent); outline-offset: 3px; }
 
-/* ---------------------------------------------------------------- seções que crescem com o conteúdo
-   O kit dá a cada seção a altura fixa de uma tela (e ao hero exatamente 100svh) a partir de 1280px; o que
-   passa disso fica por baixo da seção seguinte (o título grande do hero, o carrossel, a sede sob o rodapé).
-   Aqui toda seção tem pelo menos as suas telas e cresce com o conteúdo, em qualquer largura, como o kit
-   já faz no tablet. */
-main > :is(section, .section):not(.hero), footer.closing {
+/* ---------------------------------------------------------------- seções contínuas
+   O kit dá a cada seção a altura fixa de uma tela (e ao hero exatamente 100svh): o que passa fica por baixo
+   da seção seguinte, e o que sobra vira faixa vazia. Aqui cada seção tem a altura do próprio conteúdo, com
+   um respiro moderado, para uma seção puxar a outra. Ficam de fora o hero (uma tela) e as aulas, cujo
+   momento (pinned-chapters) segura a tela enquanto os 3 passos trocam. */
+main > :is(section, .section):not(.hero):not([data-moment="pinned-chapters"]), footer.closing {
   height: auto;
-  min-height: calc(var(--h, 1) * 100vh);
-  min-height: calc(var(--h, 1) * 100svh);
+  min-height: 0;
+  padding-top: clamp(56px, 6vw, 88px);
+  padding-bottom: clamp(40px, 4.5vw, 64px);
 }
-:where(main > :is(section, .section):not(.hero), footer.closing) { display: flex; flex-direction: column; }
-main > :is(section, .section):not(.hero) > :is(.wrap, .container), footer.closing > .wrap { flex: 1 0 auto; height: auto; min-height: 0; }
+:where(main > :is(section, .section):not(.hero):not([data-moment="pinned-chapters"]), footer.closing) { display: block; }
+main > :is(section, .section):not(.hero):not([data-moment="pinned-chapters"]) > :is(.wrap, .container), footer.closing > .wrap { height: auto; min-height: 0; }
 main > .hero.hero--stage { height: auto; min-height: 100vh; min-height: 100svh; padding-bottom: calc(120px + var(--bar, 0px)); }
 main > .hero.hero--stage > .wrap { height: auto; }
-@media (max-width: 639px) {
-  main > :is(section, .section):not(.hero), footer.closing { min-height: calc(var(--hm, var(--h, 1)) * 100lvh); }
-}
+/* as aulas: a tela que segura os 3 passos mostra o conteúdo logo abaixo do menu (centralizado, abria uma faixa
+   vazia logo depois do carrossel) e a foto do passo ocupa a altura que sobra */
+/* entre 640 e 1279 o kit estica o .wrap até a altura da seção (flex 1 0 auto): o bloco que devia ficar preso
+   ocupava a seção toda, rolava embora e deixava uma tela vazia antes dos festivais */
+main > #aulas[data-moment="pinned-chapters"].is-live { display: block; }
+main > #aulas[data-moment="pinned-chapters"].is-live > .mo-pc__grid { flex: none; }
+main > #aulas[data-moment="pinned-chapters"].is-live > .mo-pc__grid { align-content: start; padding-top: calc(var(--nav, 72px) + clamp(28px, 4vh, 48px)); }
+main > #aulas[data-moment="pinned-chapters"].is-live .mo-pc__visuals { aspect-ratio: auto; height: min(760px, calc(100svh - var(--nav, 72px) - 120px)); max-height: none; }
+/* o rodapé: o convite e os links sem a tela inteira entre eles */
+footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 
 /* ---------------------------------------------------------------- hero: a sala de ensaio */
 .hero--stage {
@@ -181,8 +189,8 @@ main > .hero.hero--stage > .wrap { height: auto; }
   text-align: left;
   cursor: pointer;
 }
-.inst__num { font: 700 26px/1 var(--font-text); letter-spacing: -0.02em; }
-.inst__vname { margin-top: auto; writing-mode: vertical-rl; rotate: 180deg; font: 700 14px/1 var(--font-text); letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
+.inst__num { position: relative; margin: -4px -8px; padding: 4px 8px; border-radius: 8px; background: var(--c); font: 700 26px/1 var(--font-text); letter-spacing: -0.02em; }
+.inst__vname { margin-top: auto; margin-left: -5px; padding: 8px 5px; border-radius: 6px; background: var(--c); writing-mode: vertical-rl; rotate: 180deg; font: 700 14px/1 var(--font-text); letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; }
 .inst__panel.is-open .inst__hit { display: none; }
 
 /* o instrumento: na faixa fechada fica em pé e vaza pelo topo do painel */
@@ -192,8 +200,10 @@ main > .hero.hero--stage > .wrap { height: auto; }
   left: 50%;
   bottom: 7%;
   height: 104%;
-  width: auto;
+  width: calc(100% + 20px);
   max-width: none;
+  object-fit: contain;
+  object-position: 50% 100%;
   translate: -50% 0;
   filter: drop-shadow(0 26px 22px rgba(0, 0, 0, 0.38));
   transition: height 0.8s cubic-bezier(0.7, 0, 0.2, 1), left 0.8s cubic-bezier(0.7, 0, 0.2, 1), bottom 0.8s cubic-bezier(0.7, 0, 0.2, 1), rotate 0.8s cubic-bezier(0.7, 0, 0.2, 1), transform 0.5s cubic-bezier(0.3, 1.4, 0.5, 1), opacity 0.4s;
@@ -206,7 +216,7 @@ main > .hero.hero--stage > .wrap { height: auto; }
 .inst__deck.has-open .inst__panel:not(.is-open) .inst__img { opacity: 0; transform: scale(0.6); }
 /* aberto: o instrumento vai para o centro com zoom-in */
 .inst__panel.is-open .inst__fig { pointer-events: none; }
-.inst__panel.is-open .inst__img { left: 50%; bottom: -3%; height: 112%; rotate: -7deg; pointer-events: auto; cursor: zoom-in; animation: zoom-in 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
+.inst__panel.is-open .inst__img { left: 50%; bottom: -3%; height: 112%; width: auto; rotate: -7deg; pointer-events: auto; cursor: zoom-in; animation: zoom-in 0.9s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
 .inst__panel[data-slug="canto"].is-open .inst__img { height: 78%; bottom: 8%; }
 .inst__panel[data-slug="ukulele"].is-open .inst__img { height: 92%; bottom: 2%; }
 .inst__panel.is-wide.is-open .inst__img { height: auto; width: min(58%, 720px); left: 54%; bottom: 22%; rotate: 0deg; }
@@ -302,11 +312,14 @@ main > .hero.hero--stage > .wrap { height: auto; }
   .inst__deck.has-open .inst__panel { height: 76px; }
   .inst__deck.has-open .inst__panel.is-open { height: 760px; }
   .inst__hit { flex-direction: row; align-items: center; gap: 16px; padding: 0 18px; }
-  .inst__vname { margin: 0; writing-mode: horizontal-tb; rotate: none; font-size: 18px; }
-  .inst__img { left: 70%; bottom: 50%; height: auto; width: 96px; translate: -50% 50%; rotate: -90deg; }
+  .inst__vname { writing-mode: horizontal-tb; rotate: none; font-size: 18px; }
+  .inst__img { left: 64%; bottom: 50%; height: 230px; width: auto; translate: -50% 50%; rotate: -90deg; }
   .is-wide .inst__img { width: 180px; rotate: -6deg; bottom: 50%; }
-  .inst__panel[data-slug] .inst__img { height: auto; bottom: 50%; }
-  .inst__panel[data-slug="canto"] .inst__img { width: 60px; }
+  .inst__panel[data-slug] .inst__img { height: 230px; bottom: 50%; }
+  .inst__panel[data-slug="canto"] .inst__img { height: 150px; }
+  .inst__panel.is-wide .inst__img { height: auto; }
+  .inst__vname { margin: 0; padding: 4px 6px; }
+  .inst__num { margin: -4px 0 -4px -8px; }
   .inst__panel[data-slug].is-open .inst__img { height: 330px; bottom: auto; }
   .inst__panel[data-slug="canto"].is-open .inst__img { height: 260px; top: 60px; }
   .inst__panel:not(.is-open):hover .inst__img { transform: none; }
@@ -382,6 +395,8 @@ main > .hero.hero--stage > .wrap { height: auto; }
 }
 .pickdrop.is-flick { animation: flick 0.8s cubic-bezier(0.3, 0.7, 0.2, 1); }
 @keyframes flick { 50% { scale: 1.18; rotate: y 180deg; } }
+/* no celular o texto ocupa a largura toda: a palheta cai rente à borda, menor, sem passar sobre as palavras */
+@media (max-width: 639px) { .pickdrop { right: 6px; width: 46px; } }
 
 /* ---------------------------------------------------------------- o cabo de guitarra */
 .cable { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; overflow: visible; }
@@ -417,7 +432,27 @@ main > .hero.hero--stage > .wrap { height: auto; }
 }
 .tape--a { top: -14px; left: 28px; rotate: -6deg; }
 .tape--b { bottom: -14px; right: 34px; rotate: 4deg; }
+.tape--c { top: -14px; right: 40px; rotate: 3deg; }
 .tilt, .develop { transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 0.35s ease-out; }
+
+/* ---------------------------------------------------------------- endereço e mapa da sede */
+.sede__addr { margin: calc(var(--s-4) * -1) 0 var(--s-5); font-style: normal; color: var(--p-muted); }
+.map { position: relative; }
+.map__frame { display: block; width: 100%; height: clamp(340px, 36vw, 500px); border: 0; border-radius: var(--r-lg); background: var(--p-surface); box-shadow: 0 18px 50px -28px rgba(27, 23, 18, 0.45); }
+.ensaio { display: flex; align-items: center; gap: var(--s-5); }
+.ensaio__photo { flex: none; width: 136px; aspect-ratio: 4 / 3; margin: 0; overflow: hidden; border-radius: 10px; }
+.ensaio__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.footer__address a { color: inherit; text-decoration: none; }
+.footer__address a:hover { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 1px; }
+.footer__full { margin: 0; color: var(--p-inv-muted); }
+@media (max-width: 1023px) {
+  .taped { margin-top: var(--s-7); }
+  .taped > .develop { margin-top: 0; }
+  .map__frame { height: 340px; }
+}
+@media (max-width: 479px) { .ensaio__photo { width: 96px; } }
+/* entre 1024 e 1199 o menu dividido aperta: fica só o emblema no centro */
+@media (min-width: 1024px) and (max-width: 1199px) { .nav .nav__logo > span { display: none; } }
 
 /* ---------------------------------------------------------------- revelação ao rolar */
 .st-js .rv { opacity: 0; translate: 0 44px; transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--rv-d, 0ms), translate 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--rv-d, 0ms), scale 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) var(--rv-d, 0ms); }

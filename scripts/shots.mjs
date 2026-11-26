@@ -98,7 +98,7 @@ if (ONLY !== "landing") {
   await p.screenshot({ path: `${OUT}/login.png` });
   await ctx.close();
   await app("carla@demo.com", ["/inicio", "/calendario", "/chat", "/festivais", "/perfil"], "aluno");
-  await app("ana@demo.com", ["/inicio", "/alunos", "/calendario"], "prof");
+  await app("camila@demo.com", ["/inicio", "/alunos", "/calendario"], "prof");
   await app(process.env.ADMIN_EMAIL ?? "alvaro@demo.com", ["/inicio", "/alunos", "/admin/professores", "/admin/site"], "admin");
   await app("carla@demo.com", ["/inicio"], "aluno-390", 390, 844);
 }

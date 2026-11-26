@@ -1,5 +1,6 @@
-// Verifica a landing em vários tamanhos de tela: nenhum conteúdo de uma seção pode passar da borda dela
-// (ficar por baixo da seção seguinte ou do rodapé), nem ficar sob o letreiro, nem gerar rolagem lateral.
+// Verifica a landing em vários tamanhos de tela: nenhum conteúdo de uma seção pode passar da borda dela (ficar
+// por baixo da seção seguinte ou do rodapé), nem ficar sob o letreiro, nem gerar rolagem lateral, e não pode
+// sobrar faixa vazia grande dentro de uma seção (a página tem de ser contínua).
 // Os elementos que vazam de propósito (instrumentos do carrossel, vinil, palheta, fitas, cabo) ficam de fora.
 // Requer o app rodando. Uso: npm run test:layout   [APP_URL=http://localhost:3000] [SIZES=1440x900,390x844]
 import { chromium } from "playwright-core";
@@ -54,6 +55,40 @@ for (const [w, h] of SIZES) {
           if (r.bottom > br.bottom + 1) out.push(`${name(b)}: ${label(el)} passa ${Math.round(r.bottom - br.bottom)}px do fim da seção`);
           if (r.top < br.top - 1) out.push(`${name(b)}: ${label(el)} começa ${Math.round(br.top - r.top)}px acima da seção`);
         }
+      }
+      // seções contínuas: sem faixa vazia grande no começo ou no fim do conteúdo (o hero e as aulas, que
+      // seguram a tela de propósito, ficam de fora)
+      for (const b of blocks) {
+        if (b.matches(".hero, [data-moment='pinned-chapters']")) continue;
+        const br = abs(b), cs = getComputedStyle(b);
+        const inner = { top: br.top + parseFloat(cs.paddingTop), bottom: br.bottom - parseFloat(cs.paddingBottom) };
+        const rs = [...b.querySelectorAll(CONTENT + ", iframe, figure, .inst__panel")]
+          .filter((el) => !el.closest(INTENTIONAL) && el.getBoundingClientRect().height > 0 && getComputedStyle(el).display !== "none")
+          .map(abs);
+        if (!rs.length) continue;
+        const top = Math.min(...rs.map((r) => r.top)), bottom = Math.max(...rs.map((r) => r.bottom));
+        if (top - inner.top > 140) out.push(`${name(b)}: ${Math.round(top - inner.top)}px vazios antes do conteúdo`);
+        if (inner.bottom - bottom > 140) out.push(`${name(b)}: ${Math.round(inner.bottom - bottom)}px vazios depois do conteúdo`);
+      }
+      // o cabo de guitarra corre pelas margens: não pode riscar títulos, textos, botões nem fitas
+      const cable = document.querySelector(".cable__line");
+      if (cable && cable.getTotalLength) {
+        const len = cable.getTotalLength();
+        const texts = [...document.querySelectorAll("main h1, main h2, main h3, main p, main li, main a.btn, .tape, footer.closing :is(h2, p, h3, li, address)")]
+          .filter((el) => !el.closest(".sr-only, .inst__body, dialog") && el.getBoundingClientRect().width > 0)
+          .map((el) => {
+            // a caixa do texto em si (não a linha inteira do bloco), a partir dos retângulos das linhas
+            const rg = document.createRange();
+            rg.selectNodeContents(el);
+            return { el, rects: [...rg.getClientRects()].map((r) => ({ l: r.left, r: r.right, t: r.top + scrollY, b: r.bottom + scrollY })) };
+          });
+        const hit = new Set();
+        for (let s = 0; s <= len; s += 6) {
+          const p = cable.getPointAtLength(s);
+          for (const t of texts)
+            if (!hit.has(t.el) && t.rects.some((r) => p.x > r.l + 2 && p.x < r.r - 2 && p.y > r.t + 2 && p.y < r.b - 2)) hit.add(t.el);
+        }
+        for (const el of hit) out.push(`o cabo risca ${label(el)}`);
       }
       // nada de texto sob o letreiro
       const mq = document.querySelector(".marquee");

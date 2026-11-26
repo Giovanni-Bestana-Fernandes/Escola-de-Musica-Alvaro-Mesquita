@@ -31,6 +31,7 @@ export async function updateMyProfile(form: FormData) {
   };
   if (user.isTeacher) {
     patch.bio = str(form, "bio") || null;
+    patch.nickname = str(form, "nickname") || null;
     const color = str(form, "color");
     if (/^#[0-9a-f]{6}$/i.test(color)) patch.color = color;
   }

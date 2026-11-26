@@ -37,7 +37,7 @@ async function page(cookie, path, expect = [], expectStatus = 200) {
 }
 
 const { data: lessons } = await service.from("lessons").select("id, student:profiles!lessons_student_id_fkey(email), teacher:profiles!lessons_teacher_id_fkey(email)");
-const carlaLesson = lessons.find((l) => l.student.email === "carla@demo.com" && l.teacher.email === "ana@demo.com").id;
+const carlaLesson = lessons.find((l) => l.student.email === "carla@demo.com" && l.teacher.email === "camila@demo.com").id;
 const diegoLesson = lessons.find((l) => l.student.email === "diego@demo.com").id;
 const { data: convs } = await service.from("conversations").select("id, student:profiles!conversations_student_id_fkey(email)");
 const carlaConv = convs.find((c) => c.student.email === "carla@demo.com").id;
@@ -45,9 +45,9 @@ const diegoConv = convs.find((c) => c.student.email === "diego@demo.com").id;
 const { data: fest } = await service.from("festivals").select("id").limit(1).single();
 
 console.log("\nVisitante");
-await page("", "/", ["hero-h", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Bruno Lima", "curso-teclado", "landing/img/sala-1600.webp", "landing/stage.js", "landing/instruments.js", "landing/forms.js"]);
+await page("", "/", ["hero-h", "6 cursos de instrumento e canto", "A nova sede", "Guitarra", "Ukulelê", "Lucas", "curso-teclado", "landing/img/sala-1600.webp", "R. Joaquim Franco Silva, 80", "maps.google.com/maps?q=", "Abrir no Google Maps", "landing/stage.js", "landing/instruments.js", "landing/forms.js"]);
 await page("", "/creditos", ["Créditos das fotos", "Wikimedia"]);
-await page("", "/matricula", ["Antes de começar, veja como são as aulas", "Continuar para o WhatsApp", "phone=5514996436839", "DWj6PbAIEbT/embed"]);
+await page("", "/matricula", ["Antes de começar, veja como são as aulas", "Continuar para o WhatsApp", "phone=5514996436839", "DWj6PbAIEbT/embed", "R. Joaquim Franco Silva, 80"]);
 await page("", "/login", ["Entrar"]);
 await page("", "/inicio", [], 307);
 await page("", "/admin/site", [], 307);
@@ -58,7 +58,7 @@ await page(carla, "/inicio", ["Carla", "Sua próxima aula", "Meus pedidos"]);
 await page(carla, "/calendario", ["Agenda"]);
 await page(carla, `/aulas/${carlaLesson}`, ["Aula de", "Precisa remarcar ou cancelar?"]);
 await page(carla, `/aulas/${diegoLesson}`, [], 404);
-await page(carla, "/chat", ["Ana Souza"]);
+await page(carla, "/chat", ["Camila"]);
 await page(carla, `/chat/${carlaConv}`, ["Escreva uma mensagem"]);
 await page(carla, `/chat/${diegoConv}`, [], 404);
 await page(carla, "/festivais", ["Festival de Inverno"]);
@@ -67,19 +67,19 @@ await page(carla, "/perfil", ["Meu perfil", "Trocar senha"]);
 await page(carla, "/alunos", [], 307);
 await page(carla, "/admin/professores", [], 307);
 
-console.log("\nProfessora Ana");
-const ana = await cookieFor("ana@demo.com");
-await page(ana, "/inicio", ["Ana", "Pedidos para responder", "Hoje"]);
-await page(ana, "/alunos", ["Meus alunos", "Carla Alves", "Agendar aulas"]);
-await page(ana, `/aulas/${carlaLesson}`, ["Remarcar", "Cancelar aula"]);
-await page(ana, "/festivais", ["Novo festival"]);
-await page(ana, "/admin/professores", [], 307);
+console.log("\nProfessora Camila");
+const camila = await cookieFor("camila@demo.com");
+await page(camila, "/inicio", ["Camila", "Pedidos para responder", "Hoje"]);
+await page(camila, "/alunos", ["Meus alunos", "Carla Alves", "Agendar aulas"]);
+await page(camila, `/aulas/${carlaLesson}`, ["Remarcar", "Cancelar aula"]);
+await page(camila, "/festivais", ["Novo festival"]);
+await page(camila, "/admin/professores", [], 307);
 
-console.log("\nProfessor Bruno (sem permissões extras)");
-const bruno = await cookieFor("bruno@demo.com");
-await page(bruno, "/alunos", ["Meus alunos", "Diego Rocha"]);
-await page(bruno, "/festivais", ["Festival de Inverno"]);
-await page(bruno, `/chat/${carlaConv}`, [], 404);
+console.log("\nProfessor Lucas (sem permissões extras)");
+const lucas = await cookieFor("lucas@demo.com");
+await page(lucas, "/alunos", ["Meus alunos", "Diego Rocha"]);
+await page(lucas, "/festivais", ["Festival de Inverno"]);
+await page(lucas, `/chat/${carlaConv}`, [], 404);
 
 console.log("\nÁlvaro (diretor e professor)");
 const alvaro = await cookieFor(process.env.ADMIN_EMAIL ?? "alvaro@demo.com");
@@ -87,9 +87,9 @@ await page(alvaro, "/inicio", ["Álvaro", "Visão geral da escola"]);
 await page(alvaro, "/calendario", ["Agenda"]);
 await page(alvaro, "/alunos", ["Alunos e matrículas", "Cadastrar aluno", "Carla Alves", "Diego Rocha"]);
 await page(alvaro, "/chat", ["Conversas dos outros professores"]);
-await page(alvaro, "/admin/professores", ["Professores", "Ana Souza", "Bruno Lima", "Calendário geral", "Também pode: Festivais"]);
+await page(alvaro, "/admin/professores", ["Professores", "Camila", "Lucas", "Calendário geral", "Também pode: Festivais"]);
 await page(alvaro, "/admin/instrumentos", ["Ukulelê"]);
-await page(alvaro, "/admin/site", ["Informações da escola", "nova-sede"]);
+await page(alvaro, "/admin/site", ["Informações da escola", "nova-sede", "Link do mapa", "R. Joaquim Franco Silva, 80"]);
 await page(alvaro, `/aulas/${diegoLesson}`, ["Remarcar"]);
 
 console.log(failed ? `\n${failed} falharam\n` : "\nTodas as páginas OK\n");

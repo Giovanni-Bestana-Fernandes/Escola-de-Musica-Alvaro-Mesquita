@@ -170,7 +170,8 @@ if (target && amp) {
     // o plugue entra pela lateral do botão, do lado em que o cabo chega
     let tx = t.x - 1,
       ty = t.y + t.h / 2;
-    const cuts = [...document.querySelectorAll(".torn")].map((s) => abs(s).y + 38);
+    // a divisa de cada seção com borda rasgada: ali nunca há texto (o conteúdo fica a um respiro de distância)
+    const cuts = [...document.querySelectorAll(".torn")].map((s) => abs(s).y);
     let x = a.x + a.w / 2,
       y = a.y + a.h;
     let d = `M${x.toFixed(1)} ${y.toFixed(1)}`;
@@ -178,9 +179,9 @@ if (target && amp) {
     let jackRot = 0;
     // primeiro desce até a margem do lado do amplificador
     const firstY = cuts[0] ?? ty;
-    d += ` C${x} ${y + 120} ${side} ${firstY - 220} ${side} ${firstY - 60}`;
+    d += ` C${x} ${y + 120} ${side} ${firstY - 220} ${side} ${firstY - 50}`;
     x = side;
-    y = firstY - 60;
+    y = firstY - 50;
     cuts.forEach((cy, i) => {
       const next = side === R ? L : R;
       const last = i === cuts.length - 1;
@@ -191,8 +192,8 @@ if (target && amp) {
         d += ` L${side} ${ty - 90} C${side} ${ty - 20} ${side + dir * 10} ${ty} ${tx} ${ty}`;
         jackRot = side === R ? 90 : -90;
       } else {
-        // cruza a seção pela borda rasgada, com uma barriga solta como cabo de verdade
-        d += ` L${side} ${cy - 40} C${side} ${cy + 70} ${next} ${cy - 20} ${next} ${cy + 90}`;
+        // atravessa a página rente à borda rasgada (uma faixa de ±50px em volta da divisa, onde não há texto)
+        d += ` L${side} ${cy - 50} C${side} ${cy + 4} ${next} ${cy - 4} ${next} ${cy + 50}`;
         side = next;
       }
     });

@@ -13,6 +13,8 @@ export interface Address {
   area: string;
   /** só a cidade: "Barra Bonita" */
   city: string;
+  /** "17340-000", ou vazio */
+  cep: string;
 }
 
 /** Separa "Rua, 80 - Bairro, Cidade - UF, CEP" nas partes usadas pelo site. Aceita endereços em outro formato. */
@@ -27,7 +29,7 @@ export function parseAddress(raw: string | null | undefined): Address | null {
   // a cidade é o último pedaço antes da UF: "Vila Hab., Barra Bonita" → "Barra Bonita"
   const beforeUf = rest.length > 1 ? rest[rest.length - 2] : rest[0] ?? "";
   const city = beforeUf.split(",").pop()?.trim() ?? "";
-  return { full, street, area, city };
+  return { full, street, area, city, cep: full.match(cep)?.[0] ?? "" };
 }
 
 /** Abre o endereço no Google Maps (no celular abre o app). */

@@ -410,7 +410,7 @@ export async function GET() {
         </div>
         ${place ? `<div class="taped map span-6 start-7">
           <iframe class="map__frame" src="${esc(mapsEmbed(place, settings?.maps_embed_url))}" title="Mapa com a localização da sede: ${esc(place.full)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
-          <span class="tape tape--b" aria-hidden="true">Estamos aqui</span>
+          <span class="tape tape--c" aria-hidden="true">Estamos aqui</span>
         </div>` : `<div class="taped span-6 start-7"><figure class="split-photo tilt">${img(PHOTO.sala, { cls: "" })}</figure><span class="tape tape--b" aria-hidden="true">Ensaio</span></div>`}
       </div>
     </div>
@@ -431,7 +431,7 @@ export async function GET() {
         <div class="span-6 stack-4">
           <a class="nav__logo" href="#top">${MARK}<span>${esc(name)}</span></a>
           ${place ? `<address class="footer__address"><a href="${esc(mapUrl!)}" target="_blank" rel="noopener">${esc(place.street)}</a></address>
-          <p class="footer__full">${esc(place.area)}${/\d{5}-?\d{3}/.test(place.full) ? ` · CEP ${esc(place.full.match(/\d{5}-?\d{3}/)![0])}` : ""}</p>` : ""}
+          <p class="footer__full">${esc(place.area)}${place.cep ? ` · CEP ${esc(place.cep)}` : ""}</p>` : ""}
           <p class="footer__lede">${esc(tagline)}</p>
         </div>
         <div class="span-3 start-7 footer__col"><h3>Escola</h3><ul><li><a href="#cursos">Cursos</a></li><li><a href="#aulas">Aulas</a></li><li><a href="#festivais">Festivais</a></li><li><a href="#sede">Sede</a></li></ul></div>
