@@ -56,13 +56,12 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   max-width: none;
   object-fit: cover;
   object-position: 62% 45%;
-  filter: saturate(1.2) contrast(1.05) brightness(1.08);
   opacity: 0;
-  translate: calc(var(--mx, 0) * -22px) calc(var(--py, 0px) + var(--my, 0) * -14px);
   transition: opacity 1.4s ease;
   animation: kenburns 30s ease-in-out infinite alternate;
+  will-change: transform;
 }
-.hero--stage.is-lit .stage__photo { opacity: calc(var(--fade, 1)); }
+.hero--stage.is-lit .stage__photo { opacity: 1; }
 @keyframes kenburns { from { scale: 1.02; } to { scale: 1.13; } }
 .stage__shade {
   position: absolute;
@@ -79,21 +78,20 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   height: 135%;
   translate: -50% 0;
   transform-origin: 50% 0;
-  background: conic-gradient(from 180deg at 50% 0, transparent 0deg 171deg, var(--bc) 180deg, transparent 189deg 360deg);
-  mix-blend-mode: screen;
-  filter: blur(8px);
-  opacity: 0.9;
+  background: conic-gradient(from 180deg at 50% 0, transparent 0deg 165deg, color-mix(in srgb, var(--bc) 35%, transparent) 172deg, var(--bc) 180deg, color-mix(in srgb, var(--bc) 35%, transparent) 188deg, transparent 195deg 360deg);
+  opacity: 0.85;
   animation: sweep var(--bd) ease-in-out infinite alternate;
+  will-change: transform;
 }
 .stage__beam--1 { --bx: 48%; --bc: rgba(150, 80, 255, 0.55); --r0: -20deg; --r1: 16deg; --bd: 9s; }
 .stage__beam--2 { --bx: 72%; --bc: rgba(255, 176, 70, 0.5); --r0: 14deg; --r1: -18deg; --bd: 11s; }
 .stage__beam--3 { --bx: 90%; --bc: rgba(200, 149, 46, 0.42); --r0: -8deg; --r1: 22deg; --bd: 7s; }
 @keyframes sweep { from { rotate: var(--r0); } to { rotate: var(--r1); } }
-.stage__dust { position: absolute; inset: 0; width: 100%; height: 100%; mix-blend-mode: screen; }
+.stage__dust { position: absolute; inset: 0; width: 100%; height: 100%; }
 /* o LED do amplificador: de onde sai o cabo */
 .stage__amp { position: absolute; right: 13%; bottom: 150px; width: 14px; height: 14px; }
 .stage__amp i { position: absolute; inset: 0; border-radius: 50%; background: #ff3b30; box-shadow: 0 0 10px 3px rgba(255, 59, 48, 0.8), 0 0 40px 10px rgba(255, 59, 48, 0.35); animation: led 1.6s ease-in-out infinite; }
-@keyframes led { 50% { opacity: 0.45; box-shadow: 0 0 6px 1px rgba(255, 59, 48, 0.6); } }
+@keyframes led { 50% { opacity: 0.45; } }
 
 .hero__wrap { position: relative; }
 .hero--stage .hero__text { max-width: 660px; }
@@ -108,17 +106,19 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 .st-js .hero--stage .hero__lead { animation-delay: 620ms; }
 .st-js .hero--stage .btn-row { animation-delay: 760ms; }
 @keyframes slam {
-  0% { opacity: 0; transform: scale(1.7) translateY(-12px); filter: blur(8px); }
-  55% { opacity: 1; transform: scale(0.95) rotate(-1.2deg); filter: none; }
+  0% { opacity: 0; transform: scale(1.7) translateY(-12px); }
+  55% { opacity: 1; transform: scale(0.95) rotate(-1.2deg); }
   75% { transform: scale(1.03) rotate(0.6deg); }
   100% { transform: none; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+/* a entrada espera a tela de carregamento sair (fica parada no primeiro quadro, invisível, até lá) */
+.is-loading .hero--stage :is(h1 .w, .hero__kicker, .hero__lead, .btn-row) { animation-play-state: paused; }
 
 /* ---------------------------------------------------------------- letreiro entre o hero e os cursos */
 .marquee {
   position: relative;
-  z-index: 4;
+  z-index: 6;
   margin: -46px -3vw -30px;
   rotate: -2deg;
   padding: 14px 0;
@@ -137,6 +137,7 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   text-transform: uppercase;
   letter-spacing: 0.06em;
   animation: marquee 38s linear infinite;
+  will-change: transform;
 }
 .marquee__track i { font-style: normal; font-size: 0.8em; }
 @keyframes marquee { to { transform: translateX(-50%); } }
@@ -278,7 +279,8 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 .inst__now b { display: block; font-weight: 600; }
 .inst__now small { opacity: 0.75; }
 .bars { display: flex; align-items: flex-end; gap: 3px; height: 26px; }
-.bars i { width: 4px; height: 100%; border-radius: 2px; background: currentColor; transform-origin: bottom; animation: bar 0.9s ease-in-out infinite alternate; }
+.bars i { width: 4px; height: 100%; border-radius: 2px; background: currentColor; transform-origin: bottom; scale: 1 0.5; }
+.inst__panel.is-open .bars i { animation: bar 0.9s ease-in-out infinite alternate; }
 .bars i:nth-child(2) { animation-delay: -0.3s; } .bars i:nth-child(3) { animation-delay: -0.6s; } .bars i:nth-child(4) { animation-delay: -0.15s; }
 .bars i:nth-child(5) { animation-delay: -0.45s; } .bars i:nth-child(6) { animation-delay: -0.75s; } .bars i:nth-child(7) { animation-delay: -0.2s; }
 @keyframes bar { from { scale: 1 0.2; } to { scale: 1 1; } }
@@ -298,6 +300,8 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   cursor: pointer;
 }
 .inst__panel.is-open .inst__close { display: block; }
+
+@media (min-width: 900px) { .inst__deck.is-live { contain: layout style; } }
 
 /* sem JS: os cursos em lista, todos abertos */
 .inst__deck:not(.is-live) { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); height: auto; }
@@ -392,6 +396,7 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   transform: translateY(var(--y, 0)) rotateY(var(--spin, 0deg)) rotate(var(--tilt, 0deg));
   filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.35));
   cursor: pointer;
+  will-change: transform;
 }
 .pickdrop.is-flick { animation: flick 0.8s cubic-bezier(0.3, 0.7, 0.2, 1); }
 @keyframes flick { 50% { scale: 1.18; rotate: y 180deg; } }
@@ -399,7 +404,7 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 @media (max-width: 639px) { .pickdrop { right: 6px; width: 46px; } }
 
 /* ---------------------------------------------------------------- o cabo de guitarra */
-.cable { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; overflow: visible; }
+.cable { position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; overflow: visible; will-change: transform; }
 .cable path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .cable__glow { stroke: var(--p-accent); stroke-width: 7; }
 .cable__line { stroke: #16120e; stroke-width: 3.5; }
@@ -484,7 +489,7 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 .equipe__photo { position: relative; margin: var(--s-7) 0 0; border-radius: var(--r-lg) var(--r-lg) 0 0; overflow: hidden; aspect-ratio: 21 / 9; background: #0d0b09; }
 .equipe__photo img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 30%; }
 /* a foto da equipe é pequena (948px): fica centralizada e no máximo nessa largura, para não perder nitidez */
-.equipe__photo:not(.is-empty) { max-width: 880px; margin-inline: auto; aspect-ratio: 948 / 548; }
+.equipe__photo:not(.is-empty) { max-width: 829px; margin-inline: auto; aspect-ratio: 829 / 535; }
 .equipe__photo.is-empty { aspect-ratio: auto; height: clamp(90px, 10vw, 150px); background: radial-gradient(ellipse at 50% 100%, rgba(200, 149, 46, 0.22), transparent 70%); border-radius: 0; }
 /* o arco dourado do cartaz: corta a foto embaixo e emenda no preto da seção */
 .equipe__arc { position: absolute; left: -2%; right: -2%; bottom: -1px; width: 104%; height: 24%; }
@@ -556,7 +561,7 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   .equipe__head { grid-template-columns: 1fr; }
   .equipe__mark { justify-items: start; text-align: left; grid-auto-flow: column; align-items: center; }
   .equipe__mark .brand-mark { width: 56px; }
-  .equipe__photo:not(.is-empty) { aspect-ratio: 948 / 548; }
+  .equipe__photo:not(.is-empty) { aspect-ratio: 829 / 535; }
   .equipe__cards { gap: 44px; }
   .equipe__cards.has-photo { margin-top: -36px; }
 }
@@ -565,6 +570,12 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 .st-js .rv { opacity: 0; translate: 0 44px; transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--rv-d, 0ms), translate 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) var(--rv-d, 0ms), scale 0.8s cubic-bezier(0.2, 1.3, 0.4, 1) var(--rv-d, 0ms); }
 .st-js h2.rv { scale: 1.08; transform-origin: 0 50%; }
 .st-js .rv.is-in { opacity: 1; translate: none; scale: none; }
+
+/* ---------------------------------------------------------------- fora da tela e modo leve */
+.hero--stage.is-off :is(.stage__photo, .stage__beam, .stage__amp i), .marquee.is-off .marquee__track { animation-play-state: paused; }
+.st-lite .stage__photo { animation: none; scale: 1.04; }
+.st-lite .stage__beam--1, .st-lite .stage__beam--3, .st-lite .stage__dust { display: none; }
+.st-lite .tilt, .st-lite .develop { transform: none; }
 
 /* ---------------------------------------------------------------- movimento reduzido */
 .st-still .stage__photo, .st-still .stage__beam, .st-still .marquee__track, .st-still .stage__amp i, .st-still .bars i { animation: none; }
@@ -609,9 +620,11 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
 #festivais > .wrap { position: relative; z-index: 1; }
 .eq {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
-  height: 100%;
+  height: 50%;
   z-index: 0;
   pointer-events: none;
 }
@@ -630,6 +643,7 @@ footer.closing .closing__links { margin-top: clamp(56px, 7vw, 96px); }
   pointer-events: none;
   transform: scale(calc(0.4 + 0.6 * var(--e, 1))) rotate(calc((1 - var(--e, 1)) * -90deg));
   filter: drop-shadow(0 24px 30px rgba(0, 0, 0, 0.45));
+  will-change: transform;
 }
 .vinyl svg { width: 100%; height: 100%; overflow: visible; }
 .vinyl__disc { transform-origin: 0 0; }

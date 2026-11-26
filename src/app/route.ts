@@ -3,8 +3,7 @@
  * (public/assets: system.css, motion, layout, moments) + a sala de ensaio com luzes e o cabo que liga as seções
  * (public/landing/stage.js), o carrossel de cursos (public/landing/instruments.js) e as formas musicais de cada
  * seção (public/landing/forms.js).
- * Fica fora do Tailwind da área logada para os dois sistemas visuais não se misturarem.
- * Os textos editáveis vêm do Supabase (Administração → Página inicial).
+ * Os textos, os cursos e a equipe ficam em src/lib/site-data.ts.
  *
  * type: service · site-kind other
  * deal: hero sobre a foto da sala de ensaio (luzes e poeira animadas), carrossel colorido por instrumento,
@@ -13,41 +12,13 @@
  * palette: cores da logo (preto + dourado) via start.mjs brand · type: Newsreader / Hanken Grotesk
  * moments: pinned-chapters (#aulas), picture-develops (#festivais)
  */
-import { createClient } from "@supabase/supabase-js";
-import { ADDRESS_DEFAULT, mapsEmbed, mapsLink, parseAddress } from "@/lib/address";
+import { mapsEmbed, mapsLink, parseAddress } from "@/lib/address";
+import { INSTRUMENTS, SECTIONS, SETTINGS, TEACHERS, type Teacher } from "@/lib/site-data";
+import { whatsappLink } from "@/lib/whatsapp";
 
-export const dynamic = "force-dynamic";
-
-interface Settings {
-  school_name: string;
-  tagline: string | null;
-  address: string | null;
-  maps_embed_url: string | null;
-  whatsapp: string | null;
-  instagram: string | null;
-  email: string | null;
-}
-interface Section {
-  slug: string;
-  title: string;
-  body: string;
-  image_url: string | null;
-  visible: boolean;
-}
-interface Instrument {
-  id: number;
-  name: string;
-  slug: string;
-  description: string | null;
-}
-interface Teacher {
-  id: string;
-  full_name: string;
-  bio: string | null;
-  role: string;
-  instruments: string[];
-  nickname: string | null;
-}
+// página estática, refeita uma vez por dia (o ano do rodapé)
+export const dynamic = "force-static";
+export const revalidate = 86400;
 
 // ---------------------------------------------------------------- helpers
 const esc = (s: unknown) =>
@@ -147,34 +118,18 @@ const SALA_ALT = "Sala de ensaio escura com bateria, amplificadores e a banda to
 
 // ---------------------------------------------------------------- page
 export async function GET() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  let settings: Settings | null = null;
-  let sections: Section[] = [];
-  let instruments: Instrument[] = [];
-  let teachers: Teacher[] = [];
-  if (url && key) {
-    const db = createClient(url, key, { auth: { persistSession: false } });
-    const [s, sec, ins, t] = await Promise.all([
-      db.from("site_settings").select("*").eq("id", 1).maybeSingle<Settings>(),
-      db.from("site_sections").select("slug, title, body, image_url, visible").returns<Section[]>(),
-      db.from("instruments").select("id, name, slug, description").order("sort").returns<Instrument[]>(),
-      db.from("public_teachers").select("*").returns<Teacher[]>(),
-    ]);
-    settings = s.data;
-    sections = sec.data ?? [];
-    instruments = ins.data ?? [];
-    teachers = t.data ?? [];
-  }
+  const settings = SETTINGS;
+  const sections = SECTIONS;
+  const instruments = INSTRUMENTS;
+  const teachers = TEACHERS;
 
-  const name = settings?.school_name || "Espaço Musical Álvaro Mesquita";
-  const tagline = settings?.tagline || "Formando músicos para a vida.";
+  const name = settings.school_name || "Espaço Musical Álvaro Mesquita";
+  const tagline = settings.tagline || "Formando músicos para a vida.";
   const sec = (slug: string) => sections.find((x) => x.slug === slug && x.visible);
   const sobre = sec("sobre");
   const sede = sec("nova-sede");
   const festivais = sec("festivais");
-  // sem o Supabase (ou sem endereço salvo) o site mostra o endereço da sede
-  const place = parseAddress(settings ? settings.address : ADDRESS_DEFAULT);
+  const place = parseAddress(settings.address);
   const mapUrl = place ? mapsLink(place) : null;
   // "Quero me matricular" abre a tela do vídeo (/matricula), que depois leva ao WhatsApp
   const wa = "/matricula";
@@ -236,7 +191,7 @@ export async function GET() {
   const teamPhoto = sobre?.image_url ?? null;
   const teamImg = teamPhoto
     ? `<img src="${esc(teamPhoto)}" alt="A equipe de professores do Espaço Musical Álvaro Mesquita" loading="lazy" decoding="async" data-source="client" data-subject="equipe">`
-    : `<img src="landing/img/equipe.webp" srcset="landing/img/equipe-474.webp 474w, landing/img/equipe.webp 948w" sizes="(max-width: 899px) 100vw, 880px" width="948" height="548" alt="Os professores Lucas, Camila e Alvarinho na sede, em frente às guitarras penduradas na parede" loading="lazy" decoding="async" data-source="client" data-subject="equipe">`;
+    : `<img src="landing/img/equipe.webp" srcset="landing/img/equipe-474.webp 474w, landing/img/equipe.webp 829w" sizes="(max-width: 899px) 100vw, 829px" width="829" height="535" alt="Os professores Lucas, Camila e Alvarinho na sede, em frente às guitarras penduradas na parede" loading="lazy" decoding="async" data-source="client" data-subject="equipe">`;
   const teamCards = orderedTeachers
     .map((t, k) => {
       const nick = t.nickname?.trim() || t.full_name.split(" ")[0];
@@ -261,7 +216,7 @@ export async function GET() {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${esc(name)}: escola de rock com aulas presenciais e online</title>
-<meta name="description" content="Escola de rock: aulas de ${esc(listPt(insNames))} na sede da escola ou pelo Google Meet, com área do aluno para agenda, chat e fotos dos festivais.">
+<meta name="description" content="Escola de rock: aulas de ${esc(listPt(insNames))} na sede da escola ou online, pelo Google Meet.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="${esc(name)}: escola de rock com aulas presenciais e online">
 <meta property="og:description" content="${esc(cap(listPt(insNames)))}, na sede ou online.">
@@ -270,6 +225,50 @@ export async function GET() {
 <link rel="icon" href="/icons/192" type="image/png">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#1b1712">
+<!-- tela de carregamento: o roqueiro no meio, no escuro da marca (--p-inv-bg). Fica no <head> para aparecer
+     já no primeiro quadro; sai quando a página termina de carregar (mín. 0,9 s para não piscar, máx. 6 s). -->
+<link rel="preload" as="image" href="landing/img/roqueiro.gif" fetchpriority="high">
+<style>
+  .loader { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; background: #1b1712; transition: opacity 0.6s ease, visibility 0s linear 0.6s; }
+  .loader__gif { display: block; width: clamp(240px, 30vw, 360px); height: auto; transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.4s ease; }
+  .loader .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  html.is-loaded .loader { opacity: 0; visibility: hidden; pointer-events: none; }
+  html.is-loaded .loader__gif { transform: scale(1.08); opacity: 0; }
+  /* sem JS a página não espera nada: a tela some sozinha */
+  @keyframes loader-out { to { opacity: 0; visibility: hidden; } }
+  html:not(.is-loading, .is-loaded) .loader { animation: loader-out 0.4s 0.6s forwards; }
+  @media (prefers-reduced-motion: reduce) { .loader, .loader__gif { transition: none; } }
+</style>
+<script>
+(function () {
+  var d = document.documentElement, done = false;
+  d.classList.add("is-loading");
+  // segura a rolagem enquanto a tela está em cima (sem overflow: hidden, que mudaria a largura da página
+  // e faria tudo pular de lado quando a barra de rolagem voltasse)
+  var KEYS = { " ": 1, PageDown: 1, PageUp: 1, ArrowDown: 1, ArrowUp: 1, Home: 1, End: 1 };
+  var stop = function (e) { if (e.type !== "keydown" || KEYS[e.key]) e.preventDefault(); };
+  var opt = { passive: false };
+  ["wheel", "touchmove", "keydown"].forEach(function (t) { addEventListener(t, stop, opt); });
+  var hide = function () {
+    if (done) return;
+    done = true;
+    var still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setTimeout(function () {
+      ["wheel", "touchmove", "keydown"].forEach(function (t) { removeEventListener(t, stop, opt); });
+      d.classList.remove("is-loading");
+      d.classList.add("is-loaded");
+      // depois do fade, tira a tela do documento: o GIF para de animar e libera a memória dos quadros
+      setTimeout(function () {
+        var l = document.querySelector(".loader");
+        if (l) l.remove();
+      }, 700);
+    }, still ? 0 : Math.max(0, 900 - performance.now()));
+  };
+  if (document.readyState === "complete") hide();
+  else addEventListener("load", hide);
+  setTimeout(hide, 6000);
+})();
+</script>
 <meta name="site-kind" content="other">
 <meta name="page-type" content="service">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -323,6 +322,7 @@ export async function GET() {
 </style>
 </head>
 <body>
+<div class="loader" role="status"><img class="loader__gif" src="landing/img/roqueiro.gif" width="400" height="400" alt="" fetchpriority="high" decoding="async"><span class="sr-only">Carregando o site do ${esc(name)}</span></div>
 <!-- type: service
      deal: hero split, nav nav-split, close close-type, footer footer-visit, rhythm surface-pairs, buttons arrow, mark: o emblema da logo
      moments: pinned-chapters (#aulas), picture-develops (#festivais); fundo de foto da sala de ensaio com luzes, carrossel de cursos colorido e o cabo que liga as seções (pedidos do cliente) -->
@@ -339,7 +339,6 @@ export async function GET() {
       <div class="nav__item"><a class="nav__link" href="#sede">Sede</a></div>
     </nav>
     <div class="nav__actions">
-      <a class="nav__link" href="/login">Área do aluno</a>
       <a class="btn btn--primary" href="${esc(wa)}"${waAttrs}>${MAIN}</a>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -393,12 +392,12 @@ export async function GET() {
           </li>
           <li class="mo-pc__step">
             <h3>Aula online pelo Google Meet</h3>
-            <p>O professor fixa o link da aula no chat. No horário marcado, você abre o app da escola e entra na chamada.</p>
+            <p>O professor manda o link da chamada. No horário marcado, você entra de onde estiver, com a mesma atenção da aula presencial.</p>
             <figure class="mo-pc__visual">${img(PHOTO.online, { cls: "" })}</figure>
           </li>
           <li class="mo-pc__step">
-            <h3>Agenda e materiais no app</h3>
-            <p>No calendário você vê as suas aulas e pede para remarcar ou cancelar. Partituras, áudios e links ficam no chat.</p>
+            <h3>Horário e materiais combinados com o professor</h3>
+            <p>O horário da aula é combinado direto com o seu professor, que também envia as partituras, os áudios e os links para você estudar em casa.</p>
             <figure class="mo-pc__visual">${img(PHOTO.materiais, { cls: "" })}</figure>
           </li>
         </ol>
@@ -413,8 +412,8 @@ export async function GET() {
         <div class="section-head">
           <h2 id="festivais-h">Festivais de rock com todos os alunos no palco</h2>
         </div>
-        <div class="prose">${md(festivais?.body || "Nos festivais da escola, todos os alunos tocam. As fotos e os vídeos de cada festival ficam na área do aluno.")}
-        <p><a class="link" href="/login">Ver as fotos na área do aluno</a></p></div>
+        <div class="prose">${md(festivais?.body || "Nos festivais da escola, todos os alunos tocam.")}
+        ${settings.instagram ? `<p><a class="link" href="https://instagram.com/${esc(settings.instagram)}" target="_blank" rel="noopener">Ver as fotos no Instagram</a></p>` : ""}</div>
       </div>
       <div class="taped span-6 start-7"><figure class="develop" data-moment="picture-develops">${img(PHOTO.festival, { cls: "" })}</figure><span class="tape tape--a" aria-hidden="true">Ao vivo</span></div>
     </div>
@@ -473,7 +472,7 @@ export async function GET() {
           </div>
         </div>
         ${place ? `<div class="taped map span-6 start-7">
-          <iframe class="map__frame" src="${esc(mapsEmbed(place, settings?.maps_embed_url))}" title="Mapa com a localização da sede: ${esc(place.full)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+          <iframe class="map__frame" src="${esc(mapsEmbed(place, settings.maps_embed_url))}" title="Mapa com a localização da sede: ${esc(place.full)}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
           <span class="tape tape--c" aria-hidden="true">Estamos aqui</span>
         </div>` : `<div class="taped span-6 start-7"><figure class="split-photo tilt">${img(PHOTO.sala, { cls: "" })}</figure><span class="tape tape--b" aria-hidden="true">Ensaio</span></div>`}
       </div>
@@ -500,9 +499,9 @@ export async function GET() {
         </div>
         <div class="span-3 start-7 footer__col"><h3>Escola</h3><ul><li><a href="#cursos">Cursos</a></li><li><a href="#aulas">Aulas</a></li><li><a href="#festivais">Festivais</a></li><li><a href="#bandas">Projeto de Bandas</a></li><li><a href="#professores">Equipe</a></li><li><a href="#sede">Sede</a></li></ul></div>
         <div class="span-3 footer__col"><h3>Contato</h3><ul>
-          <li><a href="/login">Área do aluno</a></li>
-          ${settings?.instagram ? `<li><a href="https://instagram.com/${esc(settings.instagram)}" target="_blank" rel="noopener">Instagram</a></li>` : ""}
-          ${settings?.email ? `<li><a href="mailto:${esc(settings.email)}">E-mail</a></li>` : ""}
+          <li><a href="${esc(whatsappLink(settings.whatsapp))}" target="_blank" rel="noopener">WhatsApp</a></li>
+          ${settings.instagram ? `<li><a href="https://instagram.com/${esc(settings.instagram)}" target="_blank" rel="noopener">Instagram</a></li>` : ""}
+          ${settings.email ? `<li><a href="mailto:${esc(settings.email)}">E-mail</a></li>` : ""}
         </ul></div>
       </div>
       <div class="footer__legal">

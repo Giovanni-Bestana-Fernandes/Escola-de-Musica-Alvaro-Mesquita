@@ -2,30 +2,20 @@
  * Tela de matrícula: o botão "Quero me matricular" da landing abre esta página, que mostra o vídeo da escola
  * (post do Instagram) e só depois leva ao WhatsApp com a mensagem pronta pedindo horários e valores.
  */
-import { createClient } from "@supabase/supabase-js";
 import { ENROLL_VIDEO_POST, whatsappLink } from "@/lib/whatsapp";
-import { ADDRESS_DEFAULT, mapsLink, parseAddress } from "@/lib/address";
+import { mapsLink, parseAddress } from "@/lib/address";
+import { SETTINGS } from "@/lib/site-data";
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const MARK = `<svg viewBox="0 0 100 110" width="34" height="37" aria-hidden="true"><defs><linearGradient id="bm" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="110"><stop offset="0" stop-color="#fbecbf"/><stop offset=".3" stop-color="#ecc566"/><stop offset=".55" stop-color="#c08f2a"/><stop offset=".8" stop-color="#f5d98a"/><stop offset="1" stop-color="#9a7020"/></linearGradient></defs><path d="M50 104C38 92 8 58 6 32 4 12 26 4 50 4s46 8 44 28c-2 26-32 60-44 72Z" fill="none" stroke="url(#bm)" stroke-width="6"/><g stroke="url(#bm)" stroke-width="4" stroke-linecap="round"><line x1="32" y1="24" x2="40" y2="58"/><line x1="50" y1="18" x2="50" y2="58"/><line x1="68" y1="24" x2="60" y2="58"/></g><path d="M14 56c18 10 50 10 72-6" fill="none" stroke="url(#bm)" stroke-width="5" stroke-linecap="round"/></svg>`;
 
-export async function GET() {
-  let phone: string | null = null;
-  let address: string | null = ADDRESS_DEFAULT;
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (url && key) {
-    const db = createClient(url, key, { auth: { persistSession: false } });
-    const { data } = await db.from("site_settings").select("whatsapp, address").eq("id", 1).maybeSingle();
-    phone = data?.whatsapp ?? null;
-    if (data) address = data.address;
-  }
-  const wa = whatsappLink(phone);
+export function GET() {
+  const wa = whatsappLink(SETTINGS.whatsapp);
   const embed = `${ENROLL_VIDEO_POST}embed/`;
-  const place = parseAddress(address);
+  const place = parseAddress(SETTINGS.address);
 
   const html = `<!doctype html>
 <html lang="pt-BR">

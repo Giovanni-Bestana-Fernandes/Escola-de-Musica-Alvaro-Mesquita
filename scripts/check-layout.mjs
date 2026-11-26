@@ -89,6 +89,18 @@ for (const [w, h] of SIZES) {
             if (!hit.has(t.el) && t.rects.some((r) => p.x > r.l + 2 && p.x < r.r - 2 && p.y > r.t + 2 && p.y < r.b - 2)) hit.add(t.el);
         }
         for (const el of hit) out.push(`o cabo risca ${label(el)}`);
+        // o letreiro cobre o cabo (o cabo passa por baixo da faixa, nunca por cima dos nomes dos instrumentos)
+        const mqEl = document.querySelector(".marquee");
+        if (mqEl) {
+          const z = (el) => Number.parseInt(getComputedStyle(el).zIndex, 10) || 0;
+          const mr = mqEl.getBoundingClientRect();
+          let crosses = false;
+          for (let s = 0; s <= len && !crosses; s += 6) {
+            const p = cable.getPointAtLength(s);
+            crosses = p.x > mr.left && p.x < mr.right && p.y > mr.top + scrollY && p.y < mr.bottom + scrollY;
+          }
+          if (crosses && z(mqEl) <= z(cable.ownerSVGElement)) out.push("o cabo passa por cima do letreiro");
+        }
       }
       // nada de texto sob o letreiro
       const mq = document.querySelector(".marquee");

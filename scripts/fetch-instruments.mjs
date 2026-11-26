@@ -12,7 +12,7 @@ const API = "https://commons.wikimedia.org/w/api.php";
 
 /** key → arquivo do Commons. cut: "alpha" (já é PNG recortado) | "white" (fundo branco a remover) | "photo" */
 const ITEMS = [
-  { key: "sala", title: "File:A depressive rock band in Iran- Music rehearsal space- Canon Photography-Mortaz band- Photographer mostafa meraji 13.jpg", cut: "photo" },
+  { key: "sala", title: "File:A depressive rock band in Iran- Music rehearsal space- Canon Photography-Mortaz band- Photographer mostafa meraji 13.jpg", cut: "photo", grade: true },
   { key: "banda", title: "File:A depressive rock band in Iran- Music rehearsal space- Canon Photography-Mortaz band- Photographer mostafa meraji 08.jpg", cut: "photo" },
   { key: "guitarra", title: "File:Guitar 3.png", cut: "alpha" },
   { key: "violao", title: "File:Spanish classical acoustic guitar3.png", cut: "alpha" },
@@ -96,7 +96,10 @@ for (const it of ITEMS) {
       it.size = { width, height };
     }
   } else if (it.cut === "photo") {
-    for (const wd of [800, 1600, 2400]) await sharp(src).resize({ width: wd }).webp({ quality: 74 }).toFile(`${OUT}/${it.key}-${wd}.webp`);
+    // grade: o ajuste de cor do fundo do topo (+20% saturação, +5% contraste, +8% brilho) vai pronto na imagem,
+    // em vez de um filter em CSS que a GPU refaria a cada quadro do zoom contínuo
+    const graded = (img) => (it.grade ? img.modulate({ saturation: 1.2 }).linear(1.134, -6.9) : img);
+    for (const wd of [800, 1600, 2400]) await graded(sharp(src).resize({ width: wd })).webp({ quality: 74 }).toFile(`${OUT}/${it.key}-${wd}.webp`);
   } else {
     const png = it.cut === "white" ? await cutWhite(src) : src;
     const trimmed = await sharp(png).trim({ threshold: 1 }).png().toBuffer();

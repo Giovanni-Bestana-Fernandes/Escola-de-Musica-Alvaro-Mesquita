@@ -1,7 +1,7 @@
 /**
- * Endereço da sede: o texto completo vem de site_settings.address (editável em Administração → Site da escola).
+ * Endereço da sede: o texto completo vem de SETTINGS.address (src/lib/site-data.ts).
  * Daqui saem a forma curta (rua e número), o bairro e a cidade, o link para abrir no Google Maps e o mapa
- * incorporado com o pin. O mapa usa o link colado pela escola (maps_embed_url) ou, sem ele, a busca pelo endereço.
+ * incorporado com o pin. O mapa usa o link de incorporação (SETTINGS.maps_embed_url) ou, sem ele, a busca pelo endereço.
  */
 export const ADDRESS_DEFAULT = "R. Joaquim Franco Silva, 80 - Vila Hab., Barra Bonita - SP, 17340-000";
 

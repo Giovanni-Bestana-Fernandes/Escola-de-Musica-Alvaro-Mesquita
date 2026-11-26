@@ -1,4 +1,4 @@
-/** Número e mensagem de matrícula da escola (enviados pelo cliente). O número pode ser trocado em Site da escola. */
+/** Número e mensagem de matrícula da escola (enviados pelo cliente). O número fica em src/lib/site-data.ts. */
 export const WHATSAPP_DEFAULT = "5514996436839";
 export const WHATSAPP_MESSAGE =
   "Olá! Quero aprender um instrumento no Espaço Musical Álvaro Mesquita. Poderia me enviar a tabela de horários e valores?";

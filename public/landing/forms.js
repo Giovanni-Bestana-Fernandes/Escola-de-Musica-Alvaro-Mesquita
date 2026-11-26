@@ -13,17 +13,36 @@ const svg = (tag, attrs = {}, parent) => {
 };
 if (reduced) document.documentElement.classList.add("forms-still");
 
-// progresso de entrada: 0 quando o topo da seção chega no pé da tela, 1 quando chega a 35% do topo
-const entry = (el) => {
-  const r = el.getBoundingClientRect();
-  return reduced ? 1 : clamp((innerHeight - r.top) / (innerHeight * 0.65));
-};
+// progresso de entrada: 0 quando o topo da seção chega no pé da tela, 1 quando chega a 35% do topo.
+// A rolagem não lê layout: a posição de cada seção (e as medidas que as formas usam) fica guardada e só é
+// medida de novo quando o tamanho da página muda (ResizeObserver). As formas longe da tela não são tocadas
+// enquanto o progresso delas não muda.
 const forms = [];
-let ticking = false;
+let ticking = false,
+  measured = false;
+const measure = () => {
+  for (const f of forms) {
+    const r = f.el.getBoundingClientRect();
+    f.top = r.top + scrollY;
+    f.h = r.height;
+    f.measure?.();
+  }
+  measured = true;
+};
 const update = () => {
   ticking = false;
-  document.documentElement.style.setProperty("--scroll", (scrollY / innerHeight).toFixed(3));
-  for (const f of forms) f.update(entry(f.el));
+  if (!measured) measure();
+  const vh = innerHeight,
+    y = scrollY;
+  forms.forEach((f) => {
+    const top = f.top - y;
+    const r = { top, bottom: top + f.h, height: f.h };
+    const e = reduced ? 1 : clamp((vh - top) / (vh * 0.65));
+    const near = r.bottom > -vh * 0.5 && r.top < vh * 1.5;
+    if (!near && e === f.last) return;
+    f.last = e;
+    f.update(e, r);
+  });
 };
 const queue = () => {
   if (!ticking) {
@@ -32,7 +51,10 @@ const queue = () => {
   }
 };
 addEventListener("scroll", queue, { passive: true });
-addEventListener("resize", queue);
+new ResizeObserver(() => {
+  measured = false;
+  queue();
+}).observe(document.body);
 
 // ------------------------------------------------------------------ 1. Cursos: a palheta cai do palco no carrossel
 // A palheta dourada da logo sai do hero girando no próprio eixo (efeito de moeda), atravessa a borda rasgada e
@@ -47,6 +69,11 @@ addEventListener("resize", queue);
     pick.alt = "";
     pick.setAttribute("aria-hidden", "true");
     sec.prepend(pick);
+    // a altura dela só existe depois que a imagem carrega (e ela não muda o tamanho da página): mede de novo
+    pick.addEventListener("load", () => {
+      measured = false;
+      queue();
+    });
     const bounce = (t) => {
       // queda com dois quiques (easeOutBounce)
       const n = 7.5625, d = 2.75;
@@ -55,12 +82,20 @@ addEventListener("resize", queue);
       if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
       return n * (t -= 2.625 / d) * t + 0.984375;
     };
+    let deckTop = 0,
+      pickH = 0,
+      secTop = 0;
     forms.push({
       el: sec,
+      measure() {
+        deckTop = deck.offsetTop;
+        pickH = pick.offsetHeight;
+        secTop = sec.offsetTop;
+      },
       update(e) {
         const k = clamp(e * 1.15);
-        const top = deck.offsetTop - pick.offsetHeight * 0.55; // pousa na borda de cima dos painéis
-        const y = -sec.offsetTop * 0.18 + (top + sec.offsetTop * 0.18) * bounce(k);
+        const top = deckTop - pickH * 0.55; // pousa na borda de cima dos painéis
+        const y = -secTop * 0.18 + (top + secTop * 0.18) * bounce(k);
         pick.style.setProperty("--y", `${y.toFixed(1)}px`);
         pick.style.setProperty("--spin", `${((1 - k) * 720).toFixed(1)}deg`);
         pick.style.setProperty("--tilt", `${(k * 18).toFixed(1)}deg`);
@@ -147,18 +182,18 @@ addEventListener("resize", queue);
       e = 0,
       W = 0,
       H = 0;
+    // o canvas cobre só a metade de baixo da seção (as barras ocupam 46% da altura dela)
     const size = () => {
-      const r = sec.getBoundingClientRect();
-      const dpr = Math.min(devicePixelRatio || 1, 2);
-      W = r.width;
-      H = r.height;
+      const dpr = Math.min(devicePixelRatio || 1, 1.5);
+      W = cv.clientWidth;
+      H = cv.clientHeight;
       cv.width = Math.round(W * dpr);
       cv.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     const paint = () => {
       ctx.clearRect(0, 0, W, H);
-      const band = H * 0.46; // as barras ocupam a base da seção
+      const band = H * 0.92; // as barras ocupam a base da seção (46% dela = 92% do canvas)
       const spread = Math.min(1, e * 1.4); // 0: o ícone pequeno no centro; 1: a largura toda
       const turn = (1 - Math.min(1, e * 1.8)) * (-Math.PI / 2); // gira 90° até deitar
       const totalW = W * (0.12 + 0.88 * spread);
@@ -207,17 +242,16 @@ addEventListener("resize", queue);
       inside = false;
       kick();
     });
-    addEventListener("resize", () => {
+    new ResizeObserver(() => {
       size();
       kick();
-    });
+    }).observe(cv);
     size();
     forms.push({
       el: sec,
-      update(v) {
+      update(v, r) {
         e = v;
         if (!finePointer) {
-          const r = sec.getBoundingClientRect();
           mx = clamp(1 - (r.top + r.height / 2) / innerHeight);
           inside = v > 0.6;
         }

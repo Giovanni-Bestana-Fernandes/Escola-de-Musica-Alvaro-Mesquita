@@ -1,6 +1,8 @@
 /** Créditos das fotos do site (a linha "Fotos via Wikimedia Commons" do rodapé abre esta página). */
 import { PHOTO_CREDITS } from "@/lib/site-credits";
 
+export const dynamic = "force-static";
+
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
